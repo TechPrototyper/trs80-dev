@@ -1,5 +1,5 @@
 #!/bin/bash
-# TRS-80 Dev — setup. Clean, 4 steps, no surprises.
+# TRS-80 Dev — setup. 4 steps, no surprises.
 set -e
 
 echo "=== TRS-80 Dev: setup ==="
@@ -26,13 +26,16 @@ echo "[3/4] Installing debug bridge..."
 mkdir -p /workspace/tools
 cp /opt/trs80-rev-z/tools/trszog_bridge.py /workspace/tools/
 
-# [4] ROM: must be in the user's repo at roms/level2.hex
-echo "[4/4] Checking ROM..."
+# [4] ROM: prefer workspace copy, fall back to image-baked copy
+echo "[4/4] Setting up ROM..."
+mkdir -p /workspace/roms
 if [ -f /workspace/roms/level2.hex ]; then
-    echo "      OK: $(wc -c < /workspace/roms/level2.hex) bytes"
+    echo "      OK: workspace ROM ($(wc -c < /workspace/roms/level2.hex) bytes)"
+elif [ -f /opt/roms/level2.hex ]; then
+    cp /opt/roms/level2.hex /workspace/roms/level2.hex
+    echo "      OK: image ROM copied ($(wc -c < /workspace/roms/level2.hex) bytes)"
 else
-    echo "      MISSING: /workspace/roms/level2.hex"
-    echo "      Copy your Level II image there before starting the machine."
+    echo "      WARNING: No ROM found. Machine will not start."
 fi
 
 echo ""
