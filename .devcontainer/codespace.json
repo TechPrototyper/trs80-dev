@@ -1,0 +1,5 @@
+{
+    "initConfiguration": {
+        "contents": "# TRS-80 Dev Environment\n#\n# Z80 assembly development with a cycle-true TRS-80 Model 1 in the background.\n#\n# ## Quick start\n#\n# 1. Wait for setup to finish (clones trs80-rev-z, builds Verilator emulator)\n# 2. The machine auto-starts on folder open (debug link on tcp:5555)\n# 3. Assemble your program: Task → \"zmac: Assemble Current File\"\n# 4. Press F5 → select \"TRS-80 (hello.asm)\" or \"TRS-80 (attach, no symbols)\"\n#\n# ## Tasks\n#\n#   TRS-80: Start Machine   — (auto, but restart after Stop)\n#   TRS-80: Stop Machine    — kill the emulator process\n#   TRS-80: Screen Dump     — text-mode VRAM snapshot in terminal\n#   zmac: Assemble          — build the .asm file you have open\n#\n# ## Disk images\n#\n# Drop .dmk files into /workspace/disks/ — they auto-mount as drives 0–3.\n"
+    }
+}
