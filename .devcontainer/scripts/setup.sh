@@ -1,78 +1,48 @@
 #!/bin/bash
-# TRS-80 Dev — setup: clone trs80-rev-z, build the headless emulator,
-# copy the debug bridge, set up the workspace.
+# TRS-80 Dev — setup: build the headless emulator from trs80-rev-z,
+# copy the debug bridge. Clean, minimal, no surprises.
 set -e
 
 echo "=== TRS-80 Dev: setting up environment ==="
 
-# --- Clone the RTL + emulator source (read-only reference) ---
+# --- Clone trs80-rev-z (the RTL source + emulator) ---
 if [ ! -d /opt/trs80-rev-z ]; then
-    echo "Cloning trs80-rev-z..."
+    echo "[1/4] Cloning trs80-rev-z..."
     git clone --depth 1 https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z
+else
+    echo "[1/4] trs80-rev-z already present."
 fi
 
 # --- Build the headless Verilator emulator ---
-echo "Building emulator (Verilator, ~5 min)..."
+echo "[2/4] Building emulator (Verilator, ~5 min)..."
 cd /opt/trs80-rev-z/sim/emu
 export CPLUS_INCLUDE_PATH="/usr/local/include:${CPLUS_INCLUDE_PATH}"
 export LIBRARY_PATH="/usr/local/lib:${LIBRARY_PATH}"
 make clean 2>/dev/null || true
-make -j"$(nproc)" 2>&1 | tail -5
-echo "Emulator built: $(ls -la build/emu/Vm1_core | awk '{print $5}') bytes"
+make -j"$(nproc)" 2>&1 | tail -3
+test -x build/emu/Vm1_core && echo "      OK: $(du -h build/emu/Vm1_core | cut -f1)"
 
-# --- Copy the debug bridge to the workspace ---
-cp /opt/trs80-rev-z/tools/trszog_bridge.py /workspace/tools/ 2>/dev/null || {
-    mkdir -p /workspace/tools
-    cp /opt/trs80-rev-z/tools/trszog_bridge.py /workspace/tools/
-}
+# --- Copy the debug bridge into the workspace ---
+echo "[3/4] Installing debug bridge..."
+mkdir -p /workspace/tools
+cp /opt/trs80-rev-z/tools/trszog_bridge.py /workspace/tools/
 
-# --- ROM: use the one from the repo if present, else prompt ---
-if [ ! -f /workspace/roms/level2.hex ]; then
-    mkdir -p /workspace/roms
-    if [ -f /opt/trs80-rev-z/roms/level2.hex ]; then
-        cp /opt/trs80-rev-z/roms/level2.hex /workspace/roms/level2.hex
-        echo "ROM copied from trs80-rev-z."
-    else
-        echo ""
-        echo "WARNING: No ROM found. Place your Level II image at:"
-        echo "  /workspace/roms/level2.hex"
-        echo "(see https://github.com/TechPrototyper/trs80-rev-z/blob/main/roms/README.md)"
-    fi
-fi
-
-# --- Create a starter project if the workspace is empty ---
-if [ ! -f /workspace/hello.asm ]; then
-    cat > /workspace/hello.asm << 'ASM'
-; TRS-80 Model I — Hello World (Level II BASIC screen)
-; Assemble with: zmac -j hello.asm   (produces zout/hello.cmd + zout/hello.bds)
-
-        ORG     5500H
-
-START:  LD      A,0
-        OUT     (FFH),A          ; text mode
-
-        LD      DE,MSG
-        LD      HL,40H           ; row 0, col 0 (screen base)
-PRT:    LD      A,(DE)
-        CP      0
-        ZR      DONE
-        LD      (HL),A
-        INC     HL
-        INC     DE
-        JR      PRT
-DONE:   HALT                    ; stop here for debugging
-
-MSG:    DB      "HELLO, TRS-80!",$D,$A,0
-        END     START
-ASM
-    echo "Created starter: hello.asm"
+# --- ROM check (must be in the user's repo at roms/level2.hex) ---
+echo "[4/4] Checking ROM..."
+if [ -f /workspace/roms/level2.hex ]; then
+    echo "      OK: roms/level2.hex ($(wc -c < /workspace/roms/level2.hex) bytes)"
+else
+    echo ""
+    echo "  WARNING: No ROM found at /workspace/roms/level2.hex"
+    echo "  The machine will not start until you provide one."
+    echo "  See: https://github.com/TechPrototyper/trs80-rev-z/blob/main/roms/README.md"
+    echo ""
 fi
 
 echo ""
 echo "=== Setup complete ==="
-echo "Workspace: /workspace"
-echo "  hello.asm       — starter Z80 program"
-echo "  roms/level2.hex — Level II ROM"
-echo "  tools/trszog_bridge.py — debug bridge"
 echo ""
-echo "Next: assemble with zmac, then F5 (launch config: TRS-80 Rev Z)"
+echo "  Machine binary : /opt/trs80-rev-z/sim/emu/build/emu/Vm1_core"
+echo "  Debug bridge   : /workspace/tools/trszog_bridge.py"
+echo "  Start command  : bash .devcontainer/scripts/start_trs80.sh"
+echo ""

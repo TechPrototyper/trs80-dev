@@ -1,5 +1,5 @@
 {
-  "name": "TRS-80 Dev — Z80 Assembly with FPGA-class Hardware",
+  "name": "TRS-80 Dev — Z80 Assembly with Cycle-True Model 1",
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -10,9 +10,7 @@
       ],
       "settings": {
         "files.associations": {
-          "*.asm": "z80asm",
-          "*.v": "verilog",
-          "*.sv": "systemverilog"
+          "*.asm": "z80asm"
         }
       }
     }

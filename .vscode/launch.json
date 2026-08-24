@@ -4,7 +4,7 @@
         {
             "type": "dezog",
             "request": "launch",
-            "name": "TRS-80 (attach, no symbols)",
+            "name": "TRS-80 (attach)",
             "remoteType": "revz",
             "revz": {
                 "target": "fpga",
@@ -22,7 +22,7 @@
         {
             "type": "dezog",
             "request": "launch",
-            "name": "TRS-80 (hello.asm)",
+            "name": "TRS-80 (with zmac symbols)",
             "remoteType": "revz",
             "revz": {
                 "target": "fpga",

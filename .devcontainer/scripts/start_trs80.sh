@@ -5,11 +5,11 @@ set -e
 ROM="/workspace/roms/level2.hex"
 if [ ! -f "$ROM" ]; then
     echo "ERROR: ROM not found at $ROM"
-    echo "Place your Level II image there (see roms/README.md in trs80-rev-z)"
+    echo "Place your Level II image there (12288 bytes, \$readmemh hex format)."
     exit 1
 fi
 
-# Collect any .dmk files in /workspace/disks/ as drives
+# Collect .dmk files from /workspace/disks/ as drives 0-3
 DISKS=""
 n=0
 for dmk in /workspace/disks/*.dmk; do
@@ -19,7 +19,7 @@ for dmk in /workspace/disks/*.dmk; do
 done
 
 echo "Starting TRS-80 Rev Z (headless, debug-tcp=5555)..."
-echo "ROM: $ROM"
+echo "ROM:   $ROM"
 echo "Disks: ${DISKS:-none}"
 
 exec /opt/trs80-rev-z/sim/emu/build/emu/Vm1_core \

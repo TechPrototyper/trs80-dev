@@ -36,17 +36,6 @@
                 "reveal": "always",
                 "panel": "new"
             }
-        },
-        {
-            "label": "zmac: Assemble Current File",
-            "type": "shell",
-            "command": "zmac -j ${file} && echo 'Build OK: zout/${fileBasenameNoExtension}.cmd'",
-            "problemMatcher": [],
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            }
         }
     ]
 }
