@@ -2,10 +2,15 @@
 # Start the headless TRS-80 with debug link on TCP 5555.
 set -e
 
-ROM="/workspace/roms/level2.hex"
-if [ ! -f "$ROM" ]; then
-    echo "ERROR: ROM not found at $ROM"
-    echo "Place your Level II image there (12288 bytes, \$readmemh hex format)."
+# Find ROM: workspace first, then image-baked copy
+ROM=""
+for cand in /workspace/roms/level2.hex /opt/roms/level2.hex; do
+    if [ -f "$cand" ]; then ROM="$cand"; break; fi
+done
+
+if [ -z "$ROM" ]; then
+    echo "ERROR: No ROM found."
+    echo "Looked in: /workspace/roms/level2.hex, /opt/roms/level2.hex"
     exit 1
 fi
 
