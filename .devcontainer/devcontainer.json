@@ -7,12 +7,7 @@
     "vscode": {
       "extensions": [
         "TechPrototyper.trszog"
-      ],
-      "settings": {
-        "files.associations": {
-          "*.asm": "z80asm"
-        }
-      }
+      ]
     }
   },
   "postCreateCommand": "bash .devcontainer/scripts/setup.sh",
