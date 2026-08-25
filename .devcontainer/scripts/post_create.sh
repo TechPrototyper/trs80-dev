@@ -33,3 +33,16 @@ fi
 echo ""
 echo "=== Building emulator ==="
 bash "$WS/.devcontainer/scripts/setup.sh"
+
+echo ""
+echo "=== Running end-to-end test ==="
+python3 "$WS/.devcontainer/scripts/e2e_test.py" || {
+    echo ""
+    echo "WARNING: E2E test failed. The debug chain may not work."
+    echo "         You can re-run manually: python3 $WS/.devcontainer/scripts/e2e_test.py"
+}
+
+echo ""
+echo "=== Setup complete ==="
+echo "  Start the machine: bash $WS/.devcontainer/scripts/start_trs80.sh"
+echo "  Then press F5 in VS Code to attach the debugger."
