@@ -2,6 +2,20 @@
 # Start the headless TRS-80 with debug link on TCP 5555.
 set -e
 
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/runtime-$(id -u)}"
+mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null || true
+
+# Kill any previous instance holding port 5555
+if command -v fuser &>/dev/null; then
+    fuser -k 5555/tcp 2>/dev/null || true
+elif command -v lsof &>/dev/null; then
+    lsof -ti:5555 | xargs kill 2>/dev/null || true
+else
+    # Fallback: find and kill via /proc
+    for pid in $(ls /proc/*/fd 2>/dev/null | grep -c socket || true); do :; done
+fi
+sleep 0.5
+
 # Find ROM: workspace first, then image-baked copy
 ROM=""
 for cand in /workspaces/trs80-dev/roms/level2.hex /opt/roms/level2.hex; do

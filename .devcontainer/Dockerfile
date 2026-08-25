@@ -1,11 +1,13 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential git make g++ gcc bison flex libfl-dev cmake python3 python3-pip ca-certificates \
+        build-essential git make g++ gcc bison flex libfl-dev cmake \
+        python3 python3-pip ca-certificates libsdl2-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --break-system-packages pyserial
 
+# Verilator v5.026 (CMake build)
 RUN git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.git /opt/vsrc \
     && cd /opt/vsrc \
     && cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local \
@@ -16,13 +18,31 @@ RUN git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.g
     && rm -rf /opt/vsrc \
     && ldconfig
 
-RUN mkdir -p /usr/local/include/SDL2 /usr/local/lib
-
-COPY sdl_stub.h /usr/local/include/SDL2/SDL.h
-
-RUN echo 'void _sdl_stub_anchor(void) {}' > /tmp/s.c \
-    && gcc -shared -o /usr/local/lib/libSDL2.so /tmp/s.c \
-    && rm /tmp/s.c
+# verilated.mk — not installed by CMake, required for --exe builds
+RUN printf '%s\n' \
+    '# verilated.mk — make fragment for Verilator v5.026 (CMake install)' \
+    'VERILATOR_ROOT ?= $(shell dirname $(dirname $(lastword $(MAKEFILE_LIST))))' \
+    'VERILATOR_SRC = $(VERILATOR_ROOT)/include' \
+    '' \
+    'CXX ?= g++' \
+    'LINK = $(CXX)' \
+    'LDLIBS += -lstdc++ -lm -lz' \
+    '' \
+    'VK_USER_OBJS = $(VM_USER_CLASSES:.cpp=.o) main.o' \
+    '' \
+    'VLIB_SRCS = verilated.cpp verilated_dpi.cpp verilated_threads.cpp \' \
+    '    verilated_timing.cpp verilated_random.cpp verilated_vcd_c.cpp \' \
+    '    verilated_vpi.cpp verilated_fst_c.cpp verilated_save.cpp \' \
+    '    verilated_profiler.cpp verilated_cov.cpp' \
+    '' \
+    'VK_GLOBAL_OBJS =' \
+    '' \
+    '$(VM_PREFIX)__ALL.a: $(VLIB_SRCS:.cpp=.o)' \
+    '\tar cr $@ $^' \
+    '' \
+    '%.o: $(VERILATOR_SRC)/%.cpp' \
+    '\t$(CXX) $(CXXFLAGS) $(OPT_FAST) -I$(VERILATOR_SRC) -I$(VERILATOR_SRC)/vltstd -std=c++20 -c -o $@ $<' \
+    > /usr/local/include/verilated.mk
 
 # zmac — Z-80 macro cross-assembler (George Phillips, CC0)
 RUN git clone --depth 1 https://github.com/gp48k/zmac.git /opt/zsrc \

@@ -1,0 +1,25 @@
+{
+    "name": "z80asm",
+    "displayName": "Z80 Assembly",
+    "description": "Z80 Assembly syntax highlighting for TRS-80 development",
+    "version": "1.0.0",
+    "engines": { "vscode": "^1.80.0" },
+    "categories": ["Programming Languages"],
+    "contributes": {
+        "languages": [
+            {
+                "id": "z80asm",
+                "aliases": ["Z80 Assembly", "z80asm"],
+                "extensions": [".asm", ".z80", ".Z80"],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "z80asm",
+                "scopeName": "source.z80asm",
+                "path": "./syntaxes/z80asm.tmLanguage.json"
+            }
+        ]
+    }
+}
