@@ -55,22 +55,41 @@ else
 fi
 
 # [3] trszog debugger extension (build from pr-trs80-support-updated branch)
-if [ ! -f "$EXT_DIR/maziac.dezog/out/extension.js" ]; then
+# IMPORTANT: publisher must be "TechPrototyper" to avoid collision with marketplace maziac.dezog
+if [ ! -f "$EXT_DIR/techprototyper.dezog/out/extension.js" ]; then
     echo ""
     echo "[3/6] Building trszog debugger extension (~2 min)..."
     git clone --depth 1 --branch pr-trs80-support-updated \
         https://github.com/TechPrototyper/trszog.git /tmp/trz-build
     cd /tmp/trz-build
     npm install --no-audit --no-fund 2>/dev/null
+    # Change publisher to TechPrototyper (avoids marketplace collision)
+    python3 -c "
+import json
+p = 'package.json'
+d = json.load(open(p))
+d['publisher'] = 'TechPrototyper'
+json.dump(d, open(p,'w'), indent=2)
+"
     npx esbuild ./src/extension.ts --bundle --outdir=out \
         --external:vscode --external:@serialport --external:jsonc-parser \
         --external:node-graphviz --external:ms \
         --format=cjs --platform=node --keep-names --tree-shaking=false
-    mkdir -p "$EXT_DIR/maziac.dezog"
+    mkdir -p "$EXT_DIR/techprototyper.dezog"
     cp -r out package.json node_modules data assets html documentation LICENSE.txt readme.md \
-        "$EXT_DIR/maziac.dezog/" 2>/dev/null
+        "$EXT_DIR/techprototyper.dezog/" 2>/dev/null
     rm -rf /tmp/trz-build
-    echo "      trszog built and installed."
+    # Remove any marketplace copy that VS Code may have auto-installed
+    rm -rf "$EXT_DIR/maziac.dezog" "$EXT_DIR/maziac.dezog-3.7.4" 2>/dev/null
+    python3 -c "
+import json, os
+p = os.path.expanduser('~/.vscode-remote/extensions/extensions.json')
+if os.path.exists(p):
+    exts = json.load(open(p))
+    exts = [e for e in exts if 'maziac' not in e.get('identifier',{}).get('id','')]
+    json.dump(exts, open(p,'w'), indent=2)
+" 2>/dev/null || true
+    echo "      trszog built and installed (publisher: TechPrototyper)."
 else
     echo "[3/6] trszog extension already present."
 fi

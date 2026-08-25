@@ -9,5 +9,6 @@
         "**/obj_dir": true,
         "/opt": true
     },
-    "launch.showStartDebuggingButton": true
+    "extensions.autoUpdate": false,
+    "extensions.autoCheckUpdates": false
 }
