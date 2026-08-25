@@ -9,6 +9,8 @@ RUN pip3 install --break-system-packages pyserial
 RUN git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.git /opt/vsrc \
     && cd /opt/vsrc \
     && cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DFLEX_EXECUTABLE=/usr/bin/flex \
+        -DFLEX_INCLUDE_DIR=/usr/include \
     && cmake --build build -j"$(nproc)" \
     && cmake --install build \
     && rm -rf /opt/vsrc \
