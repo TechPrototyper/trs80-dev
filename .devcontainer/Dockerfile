@@ -1,16 +1,16 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential git make g++ gcc bison flex python3 python3-pip ca-certificates \
+        build-essential git make g++ gcc bison flex cmake python3 python3-pip ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --break-system-packages pyserial
 
 RUN git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.git /opt/vsrc \
     && cd /opt/vsrc \
-    && ./configure --prefix=/usr/local \
-    && make -j"$(nproc)" \
-    && make install \
+    && cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local \
+    && cmake --build build -j"$(nproc)" \
+    && cmake --install build \
     && rm -rf /opt/vsrc \
     && ldconfig
 
