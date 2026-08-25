@@ -40,14 +40,14 @@
         {
             "label": "TRS-80: Assemble (zmac)",
             "type": "shell",
-            "command": "zmac -o ${fileDirname}/${fileBasenameNoExtension}.bin ${file}",
-            "problemMatcher": "$tsc",
+            "command": "cp ${file} /tmp/_zsrc.z && zmac -o ${fileDirname}/${fileBasenameNoExtension}.hex /tmp/_zsrc.z && rm /tmp/_zsrc.z",
+            "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
             "presentation": {
-                "reveal": "silent",
+                "reveal": "always",
                 "panel": "shared"
             }
         }

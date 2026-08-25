@@ -11,8 +11,8 @@ echo "=========================================="
 echo " TRS-80 Dev Environment — Initial Setup"
 echo "=========================================="
 
-# [1] System packages
-if ! command -v verilator &>/dev/null; then
+# [1] System packages + Verilator
+if ! command -v verilator_bin &>/dev/null; then
     echo ""
     echo "[1/6] Installing system packages + Verilator (~5 min)..."
     sudo apt-get update && sudo apt-get install -y --no-install-recommends \
@@ -20,19 +20,22 @@ if ! command -v verilator &>/dev/null; then
         python3-pip ca-certificates libsdl2-dev zlib1g-dev unzip
     sudo pip3 install --break-system-packages pyserial
 
-    # Verilator v5.026 (CMake build — no --install, just copy what we need)
-    git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.git /tmp/vsrc
-    cd /tmp/vsrc
-    cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DFLEX_EXECUTABLE=/usr/bin/flex -DFLEX_INCLUDE_DIR=/usr/include
-    cmake --build build -j"$(nproc)"
-    sudo cp build/src/verilator /usr/local/bin/verilator_bin
-    sudo chmod +x /usr/local/bin/verilator_bin
-    # Install headers + perl wrapper (skip library install which may fail)
-    sudo cp -r include/* /usr/local/include/ 2>/dev/null || true
-    sudo cp bin/verilator /usr/local/bin/verilator 2>/dev/null || true
-    sudo chmod +x /usr/local/bin/verilator 2>/dev/null || true
-    rm -rf /tmp/vsrc
+    # Verilator v5.026
+    sudo bash -c '
+        set -e
+        git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.git /tmp/vsrc
+        cd /tmp/vsrc
+        cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DFLEX_EXECUTABLE=/usr/bin/flex -DFLEX_INCLUDE_DIR=/usr/include
+        cmake --build build -j$(nproc)
+        cp build/src/verilator /usr/local/bin/verilator_bin
+        chmod +x /usr/local/bin/verilator_bin
+        cmake --install build || true
+        cp -r include/* /usr/local/include/
+        chown -R vscode:vscode /usr/local/include/
+        chmod -R a+r /usr/local/include/
+        rm -rf /tmp/vsrc
+    '
     echo "      Verilator: $(/usr/local/bin/verilator_bin --version 2>&1 | head -1)"
 else
     echo "[1/6] Verilator already present."
