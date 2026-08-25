@@ -9,6 +9,4 @@
         "**/obj_dir": true,
         "/opt": true
     },
-    "extensions.autoUpdate": false,
-    "extensions.autoCheckUpdates": false
 }
