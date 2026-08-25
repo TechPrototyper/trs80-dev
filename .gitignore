@@ -1,4 +1,5 @@
 zout/
 *.cmd
 *.bds
-disks/
+disks/*
+!disks/*.dmk
