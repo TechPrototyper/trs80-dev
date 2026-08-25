@@ -17,7 +17,7 @@ if ! command -v verilator_bin &>/dev/null; then
     echo "[1/6] Installing system packages + Verilator (~5 min)..."
     sudo apt-get update && sudo apt-get install -y --no-install-recommends \
         build-essential git make g++ gcc bison flex libfl-dev cmake \
-        python3-pip ca-certificates libsdl2-dev zlib1g-dev unzip
+        python3-pip ca-certificates libsdl2-dev zlib1g-dev unzip nodejs npm
     sudo pip3 install --break-system-packages pyserial
 
     # Verilator v5.026
