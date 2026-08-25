@@ -5,12 +5,10 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": [
-        "TechPrototyper.trszog"
-      ]
+      "extensions": []
     }
   },
-  "postCreateCommand": "bash .devcontainer/scripts/setup.sh",
+  "postCreateCommand": "code --install-extension .devcontainer/trszog.vsix && bash .devcontainer/scripts/setup.sh",
   "forwardPorts": [5555],
   "portsAttributes": {
     "5555": {
