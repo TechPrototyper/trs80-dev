@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential git make g++ gcc bison flex libfl-dev cmake \
-        python3 python3-pip ca-certificates libsdl2-dev zlib1g-dev \
+        build-essential git make g++ gcc bison flex libfl-dev cmake curl \
+        python3 python3-pip ca-certificates libsdl2-dev zlib1g-dev unzip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --break-system-packages pyserial
@@ -54,14 +54,14 @@ RUN git clone --depth 1 https://github.com/gp48k/zmac.git /opt/zsrc \
     && cp zmac /usr/local/bin/ \
     && rm -rf /opt/zsrc
 
-# trszog debugger extension (baked in so VS Code sees it immediately)
-COPY .devcontainer/trszog.vsix /tmp/trszog.vsix
+# trszog debugger extension (from GitHub release, baked into image)
 RUN mkdir -p /home/vscode/.vscode-remote/extensions/maziac.dezog \
-    && cd /tmp && unzip -o trszog.vsix > /dev/null 2>&1 \
+    && curl -sL https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.1/dezog-3.7.4-rc1-trs80.1.vsix -o /tmp/trz.vsix \
+    && cd /tmp && unzip -o trz.vsix > /dev/null 2>&1 \
     && cp -r extension/* /home/vscode/.vscode-remote/extensions/maziac.dezog/ \
-    && rm -rf /tmp/extension /tmp/trszog.vsix
+    && rm -rf /tmp/extension /tmp/trz.vsix
 
-# Z80 syntax highlighting
+# Z80 syntax highlighting (tiny, from workspace)
 COPY .devcontainer/z80asm.vsix /tmp/z80asm.vsix
 RUN mkdir -p /home/vscode/.vscode-remote/extensions/local.z80asm \
     && cd /tmp && unzip -o z80asm.vsix > /dev/null 2>&1 \

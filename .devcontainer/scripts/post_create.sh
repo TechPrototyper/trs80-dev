@@ -1,5 +1,6 @@
 #!/bin/bash
-# Post-create: build emulator, run E2E test, start machine in background.
+# Post-create: build emulator, run E2E test, start machine.
+# Extensions are baked into the Docker image (see Dockerfile).
 set -e
 
 WS="/workspaces/trs80-dev"
