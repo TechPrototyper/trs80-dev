@@ -36,6 +36,20 @@
                 "reveal": "always",
                 "panel": "new"
             }
+        },
+        {
+            "label": "TRS-80: Assemble (zmac)",
+            "type": "shell",
+            "command": "zmac -o ${fileDirname}/${fileBasenameNoExtension}.bin ${file}",
+            "problemMatcher": "$tsc",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            }
         }
     ]
 }

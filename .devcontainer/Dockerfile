@@ -54,6 +54,20 @@ RUN git clone --depth 1 https://github.com/gp48k/zmac.git /opt/zsrc \
     && cp zmac /usr/local/bin/ \
     && rm -rf /opt/zsrc
 
+# trszog debugger extension (baked in so VS Code sees it immediately)
+COPY .devcontainer/trszog.vsix /tmp/trszog.vsix
+RUN mkdir -p /home/vscode/.vscode-remote/extensions/maziac.dezog \
+    && cd /tmp && unzip -o trszog.vsix > /dev/null 2>&1 \
+    && cp -r extension/* /home/vscode/.vscode-remote/extensions/maziac.dezog/ \
+    && rm -rf /tmp/extension /tmp/trszog.vsix
+
+# Z80 syntax highlighting
+COPY .devcontainer/z80asm.vsix /tmp/z80asm.vsix
+RUN mkdir -p /home/vscode/.vscode-remote/extensions/local.z80asm \
+    && cd /tmp && unzip -o z80asm.vsix > /dev/null 2>&1 \
+    && cp -r extension/* /home/vscode/.vscode-remote/extensions/local.z80asm/ \
+    && rm -rf /tmp/extension /tmp/z80asm.vsix
+
 COPY roms/level2.hex /opt/roms/level2.hex
 
 WORKDIR /workspace
