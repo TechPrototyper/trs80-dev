@@ -17,6 +17,7 @@
                     "python": "/usr/bin/python3"
                 }
             },
+            "rootFolder": "${workspaceFolder}",
             "startAutomatically": false
         }
     ]
