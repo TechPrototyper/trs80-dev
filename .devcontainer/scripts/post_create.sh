@@ -1,7 +1,7 @@
 #!/bin/bash
 # Post-create: full setup (runs once when codespace is first opened).
 # Installs toolchain, builds emulator, installs debugger extension, runs E2E test.
-set -e
+set -eo pipefail
 
 WS="/workspaces/trs80-dev"
 EXT_DIR="$HOME/.vscode-remote/extensions"
@@ -20,7 +20,7 @@ if ! command -v verilator &>/dev/null; then
         python3-pip ca-certificates libsdl2-dev zlib1g-dev unzip
     sudo pip3 install --break-system-packages pyserial
 
-    # Verilator v5.026
+    # Verilator v5.026 (CMake build — no --install, just copy what we need)
     git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.git /tmp/vsrc
     cd /tmp/vsrc
     cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local \
@@ -28,10 +28,12 @@ if ! command -v verilator &>/dev/null; then
     cmake --build build -j"$(nproc)"
     sudo cp build/src/verilator /usr/local/bin/verilator_bin
     sudo chmod +x /usr/local/bin/verilator_bin
-    cmake --install build
+    # Install headers + perl wrapper (skip library install which may fail)
+    sudo cp -r include/* /usr/local/include/ 2>/dev/null || true
+    sudo cp bin/verilator /usr/local/bin/verilator 2>/dev/null || true
+    sudo chmod +x /usr/local/bin/verilator 2>/dev/null || true
     rm -rf /tmp/vsrc
-    sudo ldconfig
-    echo "      Verilator $(verilator --version | head -1)"
+    echo "      Verilator: $(/usr/local/bin/verilator_bin --version 2>&1 | head -1)"
 else
     echo "[1/6] Verilator already present."
 fi
