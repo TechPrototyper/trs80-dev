@@ -63,7 +63,20 @@ if [ ! -f "$EXT_DIR/maziac.dezog/package.json" ]; then
     mkdir -p "$EXT_DIR/maziac.dezog"
     cp -r /tmp/trz_ext/extension/* "$EXT_DIR/maziac.dezog/"
     rm -rf /tmp/trz_ext /tmp/trz.vsix
-    echo "      trszog installed."
+    # Patch package.json: add 'revz' to schema (fixes launch.json warnings)
+    python3 -c "
+import json
+p = '$EXT_DIR/maziac.dezog/package.json'
+d = json.load(open(p))
+for dbg in d['contributes']['debuggers']:
+    if dbg['type'] == 'dezog':
+        a = dbg['configurationAttributes']['launch']
+        if 'revz' not in a['properties']['remoteType']['enum']:
+            a['properties']['remoteType']['enum'].append('revz')
+        a['properties']['revz'] = {'type':'object','description':'TRS-80 Rev Z debug transport','properties':{'target':{'type':'string'},'dongle':{'type':'string'},'transport':{'type':'object','properties':{'kind':{'type':'string'},'serial':{'type':'string'},'baud':{'type':'number'},'port':{'type':'number'},'host':{'type':'string'},'bridge':{'type':'string'},'autoStart':{'type':'boolean'},'python':{'type':'string'}}}}}
+json.dump(d, open(p,'w'), indent=2)
+"
+    echo "      trszog installed + schema patched."
 else
     echo "[3/6] trszog extension already present."
 fi
