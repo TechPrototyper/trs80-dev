@@ -16,7 +16,7 @@ RUN git clone --depth 1 --branch v5_026 https://github.com/verilator/verilator.g
 
 RUN mkdir -p /usr/local/include/SDL2 /usr/local/lib
 
-COPY .devcontainer/sdl_stub.h /usr/local/include/SDL2/SDL.h
+COPY sdl_stub.h /usr/local/include/SDL2/SDL.h
 
 RUN echo 'void _sdl_stub_anchor(void) {}' > /tmp/s.c \
     && gcc -shared -o /usr/local/lib/libSDL2.so /tmp/s.c \
@@ -29,6 +29,6 @@ RUN git clone --depth 1 https://github.com/gp48k/zmac.git /opt/zsrc \
     && cp zmac /usr/local/bin/ \
     && rm -rf /opt/zsrc
 
-COPY .devcontainer/roms/level2.hex /opt/roms/level2.hex
+COPY roms/level2.hex /opt/roms/level2.hex
 
 WORKDIR /workspace
