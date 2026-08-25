@@ -1,8 +1,6 @@
 {
   "name": "TRS-80 Dev — Z80 Assembly with Cycle-True Model 1",
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
   "features": {
     "ghcr.io/devcontainers/features/sshd:1": {}
   },
