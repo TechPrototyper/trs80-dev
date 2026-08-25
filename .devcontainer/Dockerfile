@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential git make g++ gcc bison flex libfl-dev cmake curl \
-        python3 python3-pip ca-certificates libsdl2-dev zlib1g-dev unzip \
+        build-essential git make g++ gcc bison flex libfl-dev cmake \
+        python3 python3-pip ca-certificates libsdl2-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --break-system-packages pyserial
@@ -54,19 +54,19 @@ RUN git clone --depth 1 https://github.com/gp48k/zmac.git /opt/zsrc \
     && cp zmac /usr/local/bin/ \
     && rm -rf /opt/zsrc
 
-# trszog debugger extension (from GitHub release, baked into image)
-RUN mkdir -p /home/vscode/.vscode-remote/extensions/maziac.dezog \
-    && curl -sL https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.1/dezog-3.7.4-rc1-trs80.1.vsix -o /tmp/trz.vsix \
-    && cd /tmp && unzip -o trz.vsix > /dev/null 2>&1 \
-    && cp -r extension/* /home/vscode/.vscode-remote/extensions/maziac.dezog/ \
-    && rm -rf /tmp/extension /tmp/trz.vsix
+# trszog debugger + z80asm extension (baked into image so VS Code sees them immediately)
+RUN python3 -c "import urllib.request; urllib.request.urlretrieve('https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.1/dezog-3.7.4-rc1-trs80.1.vsix', '/tmp/trz.vsix')" \
+    && python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/trz.vsix'); z.extractall('/tmp/trz_ext')" \
+    && mkdir -p /home/vscode/.vscode-remote/extensions/maziac.dezog \
+    && cp -r /tmp/trz_ext/extension/* /home/vscode/.vscode-remote/extensions/maziac.dezog/ \
+    && rm -rf /tmp/trz_ext /tmp/trz.vsix
 
-# Z80 syntax highlighting (tiny, from workspace)
+# Z80 syntax highlighting (3KB)
 COPY .devcontainer/z80asm.vsix /tmp/z80asm.vsix
-RUN mkdir -p /home/vscode/.vscode-remote/extensions/local.z80asm \
-    && cd /tmp && unzip -o z80asm.vsix > /dev/null 2>&1 \
-    && cp -r extension/* /home/vscode/.vscode-remote/extensions/local.z80asm/ \
-    && rm -rf /tmp/extension /tmp/z80asm.vsix
+RUN python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/z80asm.vsix'); z.extractall('/tmp/z80_ext')" \
+    && mkdir -p /home/vscode/.vscode-remote/extensions/local.z80asm \
+    && cp -r /tmp/z80_ext/extension/* /home/vscode/.vscode-remote/extensions/local.z80asm/ \
+    && rm -rf /tmp/z80_ext /tmp/z80asm.vsix
 
 COPY roms/level2.hex /opt/roms/level2.hex
 
