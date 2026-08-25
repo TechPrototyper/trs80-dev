@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential git make g++ gcc bison flex cmake python3 python3-pip ca-certificates \
+        build-essential git make g++ gcc bison flex libfl-dev cmake python3 python3-pip ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --break-system-packages pyserial
