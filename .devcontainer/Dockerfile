@@ -8,12 +8,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip3 install --break-system-packages pyserial
 
 # Verilator v5.026 (CMake build)
+# NOTE: cmake --install does NOT produce verilator_bin; copy it manually.
 RUN git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.git /opt/vsrc \
     && cd /opt/vsrc \
     && cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local \
         -DFLEX_EXECUTABLE=/usr/bin/flex \
         -DFLEX_INCLUDE_DIR=/usr/include \
     && cmake --build build -j"$(nproc)" \
+    && cp build/src/verilator /usr/local/bin/verilator_bin \
+    && chmod +x /usr/local/bin/verilator_bin \
     && cmake --install build \
     && rm -rf /opt/vsrc \
     && ldconfig

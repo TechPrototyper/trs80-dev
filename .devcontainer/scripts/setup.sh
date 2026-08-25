@@ -15,6 +15,22 @@ fi
 
 # [2] Build the headless Verilator emulator
 echo "[2/4] Building emulator (~3 min)..."
+
+# Ensure verilator_bin exists (CMake install may miss it)
+if ! command -v verilator_bin &>/dev/null; then
+    echo "      Fixing missing verilator_bin..."
+    sudo bash -c '
+        git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.git /tmp/vfix
+        cd /tmp/vfix
+        cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DFLEX_EXECUTABLE=/usr/bin/flex -DFLEX_INCLUDE_DIR=/usr/include
+        cmake --build build -j$(nproc)
+        cp build/src/verilator /usr/local/bin/verilator_bin
+        chmod +x /usr/local/bin/verilator_bin
+        rm -rf /tmp/vfix
+    '
+fi
+
 EMU_DIR=/opt/trs80-rev-z/sim/emu
 RTL=/opt/trs80-rev-z/rtl
 BUILD=$EMU_DIR/build/emu
