@@ -1,0 +1,73 @@
+{
+    "name": "Z80 Assembly",
+    "scopeName": "source.z80asm",
+    "patterns": [
+        { "include": "#comment" },
+        { "include": "#label" },
+        { "include": "#directive" },
+        { "include": "#instruction" },
+        { "include": "#operand" }
+    ],
+    "repository": {
+        "comment": {
+            "match": ";.*$",
+            "name": "comment.line.semicolon.z80asm"
+        },
+        "label": {
+            "patterns": [
+                {
+                    "match": "^\\s*([A-Za-z_@?][A-Za-z0-9_@?$]*)\\s*::",
+                    "captures": { "1": { "name": "entity.name.function.label.z80asm" } }
+                },
+                {
+                    "match": "^\\s*([A-Za-z_@?][A-Za-z0-9_@?$]*)\\s*:",
+                    "captures": { "1": { "name": "entity.name.function.label.z80asm" } }
+                }
+            ]
+        },
+        "directive": {
+            "patterns": [
+                {
+                    "match": "^\\s*\\.?(org|end|endm|macro|local|if|else|endif|ifdef|ifndef|rept|irp|irpc|phase|dephase|aseg|cseg|dseg|common|import|include|read|maclib|comment|assert|title|eject|nolist|elist|flist|mlist|list|space|name|rsym|wsym|extern|public|global|entry|jperror|jrpromote|z80|z180|8080|pragma)\\b",
+                    "name": "keyword.control.directive.z80asm"
+                },
+                {
+                    "match": "\\b(defb|defw|def3|defd|defs|dc|db|dw|d3|dd|ds|ascii|byte|word|text|block|rmem|incbin)\\b",
+                    "name": "storage.type.data.z80asm"
+                },
+                {
+                    "match": "\\b(equ|defl|aset|set|min|max)\\b",
+                    "name": "keyword.operator.assignment.z80asm"
+                },
+                {
+                    "match": "\\b(tstate|sett|setocf)\\b",
+                    "name": "keyword.control.timing.z80asm"
+                }
+            ]
+        },
+        "instruction": {
+            "match": "\\b(ld|ldi|ldd|ldx|ldy|ldir|lddr|lddx|lddy|lini|lidi|lint|otir|otdr|otin|otdn|inir|indir|outi|outd|push|pop|ex|exx|add|adc|sub|sbc|and|or|xor|cp|inc|dec|neg|daa|cpl|scf|ccf|rlca|rrca|rla|rra|sla|sra|sll|srl|rl|rr|sl1|bit|set|res|rst|call|ret|reti|retn|jp|jr|djnz|halt|im|di|ei|nop|cpir|cpdr|tst|mlt|slp|in0|out0)\\b",
+            "name": "keyword.instruction.z80asm"
+        },
+        "operand": {
+            "patterns": [
+                {
+                    "match": "\\b(a|b|c|d|e|h|l|ix|iy|ixh|ixl|iyh|iyl|sp|pc|af|bc|de|hl)\\b",
+                    "name": "variable.register.z80asm"
+                },
+                {
+                    "match": "\\$[0-9A-Fa-f]+|[0-9]+[Hh]\\b|0x[0-9A-Fa-f]+",
+                    "name": "constant.numeric.hex.z80asm"
+                },
+                {
+                    "match": "'[^']*'",
+                    "name": "string.quoted.single.z80asm"
+                },
+                {
+                    "match": "\"[^\"]*\"",
+                    "name": "string.quoted.double.z80asm"
+                }
+            ]
+        }
+    }
+}
