@@ -1,0 +1,2 @@
+# Exclude large VSIX from build context (trzog is downloaded in Dockerfile)
+.devcontainer/trszog.vsix
