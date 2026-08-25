@@ -1,0 +1,30 @@
+{
+  "name": "dezog",
+  "displayName": "DeZog TRS-80 Debugger",
+  "description": "Debug adapter for TRS-80 Model I (Rev Z FPGA)",
+  "version": "1.0.0",
+  "publisher": "techprototyper",
+  "engines": { "vscode": "^1.75.0" },
+  "main": "./extension.js",
+  "activationEvents": ["onDebug"],
+  "contributes": {
+    "debuggers": [
+      {
+        "type": "dezog",
+        "label": "TRS-80 (Rev Z)",
+        "languages": ["z80asm", "assembly"],
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "port": {
+                "type": "number",
+                "default": 49152,
+                "description": "DAP bridge TCP port"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

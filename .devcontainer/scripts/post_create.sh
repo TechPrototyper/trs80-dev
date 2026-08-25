@@ -54,54 +54,66 @@ else
     echo "[2/6] zmac already present."
 fi
 
-# [3] trszog debugger extension (build from pr-trs80-support-updated branch)
-# IMPORTANT: publisher must be "TechPrototyper" to avoid collision with marketplace maziac.dezog
-if [ ! -f "$EXT_DIR/techprototyper.dezog/out/extension.js" ]; then
-    echo ""
-    echo "[3/6] Building trszog debugger extension (~2 min)..."
-    git clone --depth 1 --branch pr-trs80-support-updated \
-        https://github.com/TechPrototyper/trszog.git /tmp/trz-build
-    cd /tmp/trz-build
-    npm install --no-audit --no-fund 2>/dev/null
-    # Change publisher to TechPrototyper (avoids marketplace collision)
-    python3 -c "
-import json
-p = 'package.json'
-d = json.load(open(p))
-d['publisher'] = 'TechPrototyper'
-json.dump(d, open(p,'w'), indent=2)
-"
-    npx esbuild ./src/extension.ts --bundle --outdir=out \
-        --external:vscode --external:@serialport --external:jsonc-parser \
-        --external:node-graphviz --external:ms \
-        --format=cjs --platform=node --keep-names --tree-shaking=false
-    mkdir -p "$EXT_DIR/techprototyper.dezog"
-    cp -r out package.json node_modules data assets html documentation LICENSE.txt readme.md \
-        "$EXT_DIR/techprototyper.dezog/" 2>/dev/null
-    rm -rf /tmp/trz-build
-    # Remove any marketplace copy that VS Code may have auto-installed
-    rm -rf "$EXT_DIR/maziac.dezog" "$EXT_DIR/maziac.dezog-3.7.4" 2>/dev/null
-    python3 -c "
-import json, os
-p = os.path.expanduser('~/.vscode-remote/extensions/extensions.json')
-if os.path.exists(p):
-    exts = json.load(open(p))
-    exts = [e for e in exts if 'maziac' not in e.get('identifier',{}).get('id','')]
-    json.dump(exts, open(p,'w'), indent=2)
-" 2>/dev/null || true
-    echo "      trszog built and installed (publisher: TechPrototyper)."
-else
-    echo "[3/6] trszog extension already present."
+# [3] Install VS Code extensions (minimal DAP adapter + z80 syntax)
+echo ""
+echo "[3/6] Installing VS Code extensions..."
+# In GitHub Codespaces, the 'code' CLI is NOT available during postCreate.
+# We place extensions directly and register them in extensions.json.
+# The minimal-dezog extension has ZERO dependencies — it just tells VS Code
+# to connect to our DAP bridge on TCP port 49152.
+
+# Minimal DeZog debug adapter (2KB, no deps)
+EXT_NAME="techprototyper.dezog"
+if [ ! -d "$EXT_DIR/$EXT_NAME" ]; then
+    python3 -c "import zipfile; zipfile.ZipFile('$WS/.devcontainer/minimal-dezog.vsix').extractall('/tmp/dz_vsix')"
+    mkdir -p "$EXT_DIR/$EXT_NAME"
+    cp -r /tmp/dz_vsix/extension/* "$EXT_DIR/$EXT_NAME/"
+    rm -rf /tmp/dz_vsix
+    echo "      dezog debug adapter installed (minimal, no deps)."
 fi
 
 # Z80 syntax highlighting
-if [ ! -f "$EXT_DIR/local.z80asm/package.json" ]; then
-    python3 -c "import zipfile; zipfile.ZipFile('$WS/.devcontainer/z80asm.vsix').extractall('/tmp/z80_ext')"
-    mkdir -p "$EXT_DIR/local.z80asm"
-    cp -r /tmp/z80_ext/extension/* "$EXT_DIR/local.z80asm/"
-    rm -rf /tmp/z80_ext
-    echo "      z80asm highlighting installed."
+EXT_NAME2="local.z80asm"
+if [ ! -d "$EXT_DIR/$EXT_NAME2" ]; then
+    python3 -c "import zipfile; zipfile.ZipFile('$WS/.devcontainer/z80asm.vsix').extractall('/tmp/z80_vsix')"
+    mkdir -p "$EXT_DIR/$EXT_NAME2"
+    cp -r /tmp/z80_vsix/extension/* "$EXT_DIR/$EXT_NAME2/"
+    rm -rf /tmp/z80_vsix
+    echo "      z80asm syntax highlighting installed."
 fi
+
+# Register both in extensions.json (VS Code reads this on startup)
+python3 << 'PYEOF'
+import json, os, uuid
+ext_dir = os.path.expanduser('~/.vscode-remote/extensions')
+p = os.path.join(ext_dir, 'extensions.json')
+exts = json.load(open(p)) if os.path.exists(p) else []
+existing = {e['identifier']['id'] for e in exts}
+for name in ['techprototyper.dezog', 'local.z80asm']:
+    if name not in existing:
+        exts.append({
+            'identifier': {'id': name, 'uuid': str(uuid.uuid4())},
+            'version': '1.0.0',
+            'location': {'$mid': 1, 'fsPath': os.path.join(ext_dir, name),
+                         'external': f'file://{os.path.join(ext_dir, name)}',
+                         'path': os.path.join(ext_dir, name), 'scheme': 'file'},
+            'relativeLocation': name,
+            'metadata': {
+                'isApplicationScoped': False, 'isMachineScoped': True,
+                'isBuiltin': False, 'installedTimestamp': 1787690564000,
+                'source': 'marketplace', 'id': str(uuid.uuid4()),
+                'publisherId': 'local', 'publisherDisplayName': name.split('.')[0],
+                'targetPlatform': 'undefined', 'updated': False, 'private': False,
+                'isPreReleaseVersion': False, 'hasPreReleaseVersion': False
+            }
+        })
+# Remove any stale marketplace maziac.dezog entries
+exts = [e for e in exts if 'maziac' not in e.get('identifier',{}).get('id','')]
+json.dump(exts, open(p, 'w'), indent=2)
+print(f'      {len(exts)} extensions registered in extensions.json')
+PYEOF
+# Also remove any marketplace copy on disk
+rm -rf "$EXT_DIR/maziac.dezog" "$EXT_DIR/maziac.dezog-"* 2>/dev/null || true
 
 # [4] Build the TRS-80 emulator
 echo ""
