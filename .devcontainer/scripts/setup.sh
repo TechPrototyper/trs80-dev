@@ -7,7 +7,8 @@ echo "=== TRS-80 Dev: setup ==="
 # [1] Clone trs80-rev-z (RTL source + emulator)
 if [ ! -d /opt/trs80-rev-z ]; then
     echo "[1/4] Cloning trs80-rev-z..."
-    git clone --depth 1 https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z
+    sudo git clone --depth 1 https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z
+    sudo chown -R "$(id -u):$(id -g)" /opt/trs80-rev-z
 else
     echo "[1/4] trs80-rev-z present."
 fi
