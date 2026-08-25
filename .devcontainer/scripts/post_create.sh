@@ -54,29 +54,23 @@ else
     echo "[2/6] zmac already present."
 fi
 
-# [3] trszog debugger extension
-if [ ! -f "$EXT_DIR/maziac.dezog/package.json" ]; then
+# [3] trszog debugger extension (build from pr-trs80-support-updated branch)
+if [ ! -f "$EXT_DIR/maziac.dezog/out/extension.js" ]; then
     echo ""
-    echo "[3/6] Installing trszog debugger extension..."
-    python3 -c "import urllib.request; urllib.request.urlretrieve('https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.1/dezog-3.7.4-rc1-trs80.1.vsix', '/tmp/trz.vsix')"
-    python3 -c "import zipfile; zipfile.ZipFile('/tmp/trz.vsix').extractall('/tmp/trz_ext')"
+    echo "[3/6] Building trszog debugger extension (~2 min)..."
+    git clone --depth 1 --branch pr-trs80-support-updated \
+        https://github.com/TechPrototyper/trszog.git /tmp/trz-build
+    cd /tmp/trz-build
+    npm install --no-audit --no-fund 2>/dev/null
+    npx esbuild ./src/extension.ts --bundle --outdir=out \
+        --external:vscode --external:@serialport --external:jsonc-parser \
+        --external:node-graphviz --external:ms \
+        --format=cjs --platform=node --keep-names --tree-shaking=false
     mkdir -p "$EXT_DIR/maziac.dezog"
-    cp -r /tmp/trz_ext/extension/* "$EXT_DIR/maziac.dezog/"
-    rm -rf /tmp/trz_ext /tmp/trz.vsix
-    # Patch package.json: add 'revz' to schema (fixes launch.json warnings)
-    python3 -c "
-import json
-p = '$EXT_DIR/maziac.dezog/package.json'
-d = json.load(open(p))
-for dbg in d['contributes']['debuggers']:
-    if dbg['type'] == 'dezog':
-        a = dbg['configurationAttributes']['launch']
-        if 'revz' not in a['properties']['remoteType']['enum']:
-            a['properties']['remoteType']['enum'].append('revz')
-        a['properties']['revz'] = {'type':'object','description':'TRS-80 Rev Z debug transport','properties':{'target':{'type':'string'},'dongle':{'type':'string'},'transport':{'type':'object','properties':{'kind':{'type':'string'},'serial':{'type':'string'},'baud':{'type':'number'},'port':{'type':'number'},'host':{'type':'string'},'bridge':{'type':'string'},'autoStart':{'type':'boolean'},'python':{'type':'string'}}}}}
-json.dump(d, open(p,'w'), indent=2)
-"
-    echo "      trszog installed + schema patched."
+    cp -r out package.json node_modules data assets html documentation LICENSE.txt readme.md \
+        "$EXT_DIR/maziac.dezog/" 2>/dev/null
+    rm -rf /tmp/trz-build
+    echo "      trszog built and installed."
 else
     echo "[3/6] trszog extension already present."
 fi
