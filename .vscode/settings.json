@@ -8,5 +8,6 @@
         "**/node_modules": true,
         "**/obj_dir": true,
         "/opt": true
-    }
+    },
+    "launch.showStartDebuggingButton": true
 }
