@@ -4,20 +4,20 @@ set -e
 
 # Find ROM: workspace first, then image-baked copy
 ROM=""
-for cand in /workspace/roms/level2.hex /opt/roms/level2.hex; do
+for cand in /workspaces/trs80-dev/roms/level2.hex /opt/roms/level2.hex; do
     if [ -f "$cand" ]; then ROM="$cand"; break; fi
 done
 
 if [ -z "$ROM" ]; then
     echo "ERROR: No ROM found."
-    echo "Looked in: /workspace/roms/level2.hex, /opt/roms/level2.hex"
+    echo "Looked in: /workspaces/trs80-dev/roms/level2.hex, /opt/roms/level2.hex"
     exit 1
 fi
 
-# Collect .dmk files from /workspace/disks/ as drives 0-3
+# Collect .dmk files from workspace/disks/ as drives 0-3
 DISKS=""
 n=0
-for dmk in /workspace/disks/*.dmk; do
+for dmk in /workspaces/trs80-dev/disks/*.dmk; do
     [ -f "$dmk" ] || continue
     DISKS="$DISKS --disk$n=$dmk"
     n=$((n+1))

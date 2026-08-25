@@ -15,6 +15,7 @@ fi
 # [2] Build the headless Verilator emulator
 echo "[2/4] Building emulator (~5 min)..."
 cd /opt/trs80-rev-z/sim/emu
+export PATH="/usr/local/bin:${PATH}"
 export CPLUS_INCLUDE_PATH="/usr/local/include:${CPLUS_INCLUDE_PATH}"
 export LIBRARY_PATH="/usr/local/lib:${LIBRARY_PATH}"
 make clean 2>/dev/null || true
@@ -23,17 +24,17 @@ test -x build/emu/Vm1_core && echo "      OK"
 
 # [3] Install debug bridge into workspace
 echo "[3/4] Installing debug bridge..."
-mkdir -p /workspace/tools
-cp /opt/trs80-rev-z/tools/trszog_bridge.py /workspace/tools/
+mkdir -p /workspaces/trs80-dev/tools
+cp /opt/trs80-rev-z/tools/trszog_bridge.py /workspaces/trs80-dev/tools/
 
 # [4] ROM: prefer workspace copy, fall back to image-baked copy
 echo "[4/4] Setting up ROM..."
-mkdir -p /workspace/roms
-if [ -f /workspace/roms/level2.hex ]; then
-    echo "      OK: workspace ROM ($(wc -c < /workspace/roms/level2.hex) bytes)"
+mkdir -p /workspaces/trs80-dev/roms
+if [ -f /workspaces/trs80-dev/roms/level2.hex ]; then
+    echo "      OK: workspace ROM ($(wc -c < /workspaces/trs80-dev/roms/level2.hex) bytes)"
 elif [ -f /opt/roms/level2.hex ]; then
-    cp /opt/roms/level2.hex /workspace/roms/level2.hex
-    echo "      OK: image ROM copied ($(wc -c < /workspace/roms/level2.hex) bytes)"
+    cp /opt/roms/level2.hex /workspaces/trs80-dev/roms/level2.hex
+    echo "      OK: image ROM copied"
 else
     echo "      WARNING: No ROM found. Machine will not start."
 fi
