@@ -15,8 +15,8 @@
                     "kind": "python",
                     "serial": "tcp:5555",
                     "port": 49152,
-                    "autoStart": false,
-                    "bridge": "${workspaceFolder}/tools/trszog_bridge.py",
+                    "autoStart": true,
+                    "bridge": "/opt/trs80-rev-z/tools/trszog_bridge.py",
                     "python": "/usr/bin/python3"
                 }
             },
