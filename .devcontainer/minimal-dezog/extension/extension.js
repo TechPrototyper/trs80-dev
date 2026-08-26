@@ -1,13 +1,13 @@
 const vscode = require('vscode');
 
-class DeZogDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
-  createDebugAdapterDescriptor(session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+class DeZogDebugAdapterDescriptorFactory {
+  createDebugAdapterDescriptor(session) {
     const port = session.configuration.port || 49152;
     return new vscode.DebugAdapterServer(port, 127);
   }
 }
 
-function activate(context: vscode.ExtensionContext) {
+function activate(context) {
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterDescriptorFactory('dezog', new DeZogDebugAdapterDescriptorFactory())
   );
