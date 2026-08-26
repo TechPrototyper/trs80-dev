@@ -6,9 +6,10 @@ FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 # Fast path: a PREBUILT Verilator (oss-cad-suite) instead of compiling it from
 # source (~20 min on a 2-core codespace). Pinned so every build is identical.
 # ---------------------------------------------------------------------------
-# trs80-rev-z @ a5ff689 (exp/codespace): carries the scoped SYNCASYNCNET
+# trs80-rev-z @ 9b19604 (exp/codespace): carries the scoped SYNCASYNCNET
 #   waiver (ADR-0010) so the RTL verilates cleanly under Verilator 5.05x.
-ARG REVZ_REF=a5ff6894fbaa32ecde196bea51a78a153794502b
+#   (rev-z ships NO ROM/disk by policy — trs80-dev provides those itself.)
+ARG REVZ_REF=9b19604aed669455e91265a506254f26a5ba93b7
 # oss-cad-suite release that ships Verilator 5.051 (prebuilt, linux-x64).
 ARG OSS_CAD=https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-08-26/oss-cad-suite-linux-x64-20260826.tgz
 
@@ -49,11 +50,12 @@ RUN git clone https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z
 #   installs it into the user's codespace profile. (Not on the VS Code
 #   Marketplace or OpenVSX, so it must be side-loaded.)
 #
-#   The `revz` remote lives on trszog's pr-trs80-support branch; the GitHub
-#   *release* VSIX is built from main and lacks revz ("Remote type 'revz'
-#   does not exist"). So we ship the verified revz build in-repo.
-#   Source: TechPrototyper/trszog @ pr-trs80-support (2192fe8f).
-COPY trszog-revz.vsix /opt/trszog.vsix
+#   trszog.vsix is the whole trszog (DeZog fork) with every TRS-80 remote —
+#   trs80gp, trs80sim, and revz (FPGA / Verilator). The `revz` remote lives on
+#   trszog's pr-trs80-support branch; the GitHub *release* VSIX is built from
+#   main and lacks revz ("Remote type 'revz' does not exist"), so we ship the
+#   verified build in-repo. Source: TechPrototyper/trszog @ pr-trs80-support (2192fe8f).
+COPY trszog.vsix /opt/trszog.vsix
 RUN mkdir -p /opt/trszog-ext \
     && python3 -c "import zipfile; zipfile.ZipFile('/opt/trszog.vsix').extractall('/opt/trszog-ext')" \
     && test -f /opt/trszog-ext/extension/package.json \

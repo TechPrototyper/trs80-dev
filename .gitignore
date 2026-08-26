@@ -3,4 +3,3 @@ zout/
 *.bds
 disks/*
 !disks/*.dmk
-.devcontainer/trszog.vsix
