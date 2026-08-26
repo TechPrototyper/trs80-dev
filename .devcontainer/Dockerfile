@@ -9,6 +9,10 @@ FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 # Pinned so every build is identical.
 # ---------------------------------------------------------------------------
 ARG REVZ_REF=f2985497792d85db17e40e966c2e2d838ff6e898
+# NOTE: kept byte-identical to the previous image build ONLY so the Docker
+# layer cache for the expensive Verilator step below survives a rebuild.
+# It is intentionally unused now — the trszog VSIX is COPYed in at step [6],
+# not downloaded (the release build lacks the revz remote).
 ARG TRSZOG_VSIX=https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.1/dezog-3.7.4-rc1-trs80.1.vsix
 
 # --- [1] Toolchain (Verilator autotools deps + build essentials) -----------
@@ -64,9 +68,17 @@ RUN git clone https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z
 #         installs it into the user's codespace profile. (Not on the VS Code
 #         Marketplace or OpenVSX, so it cannot be auto-installed via the
 #         devcontainer `extensions` list — it must be side-loaded.)
+#
+#   IMPORTANT: the `revz` remote (this whole workflow) lives on trszog's
+#   pr-trs80-support branch. The GitHub *release* VSIX is built from main and
+#   does NOT contain revz ("Remote type 'revz' does not exist"). So we ship
+#   the verified revz build in-repo instead of downloading the release.
+#   Source: TechPrototyper/trszog @ pr-trs80-support (2192fe8f).
+COPY trszog-revz.vsix /opt/trszog.vsix
 RUN mkdir -p /opt/trszog-ext \
-    && python3 -c "import urllib.request; urllib.request.urlretrieve('${TRSZOG_VSIX}', '/opt/trszog.vsix')" \
     && python3 -c "import zipfile; zipfile.ZipFile('/opt/trszog.vsix').extractall('/opt/trszog-ext')" \
-    && test -f /opt/trszog-ext/extension/package.json
+    && test -f /opt/trszog-ext/extension/package.json \
+    && grep -q 'case"revz"' /opt/trszog-ext/extension/out/extension.js \
+    && echo "trszog revz build verified"
 
 WORKDIR /workspace

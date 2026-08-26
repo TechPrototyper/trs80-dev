@@ -37,10 +37,17 @@ fi
 # VS Code server reads to know which extensions are installed).
 mkdir -p "$EXT_DIR"
 DEST="$EXT_DIR/techprototyper.dezog-3.7.4-rc1-trs80.1"
-if [ ! -f "$DEST/package.json" ]; then
-    rm -rf "$EXT_DIR/techprototyper.dezog"* "$EXT_DIR/maziac.dezog"* 2>/dev/null || true
-    mkdir -p "$DEST"
-    cp -r /opt/trszog-ext/extension/* "$DEST/"
+# Always overwrite. Codespaces persists ~/.vscode-remote across rebuilds, and
+# the trszog version string does not change between builds — so a stale copy
+# (e.g. an older build without the revz remote) would otherwise survive forever.
+rm -rf "$EXT_DIR/techprototyper.dezog"* "$EXT_DIR/maziac.dezog"* 2>/dev/null || true
+mkdir -p "$DEST"
+cp -r /opt/trszog-ext/extension/* "$DEST/"
+# Sanity: the installed build must actually wire the revz remote.
+if grep -q 'case"revz"' "$DEST/out/extension.js" 2>/dev/null; then
+    echo "      trszog build includes the revz remote."
+else
+    echo "      WARNING: installed trszog does NOT contain revz — stale image?"
 fi
 
 python3 - "$EXT_DIR" "$DEST" << 'PYEOF'
