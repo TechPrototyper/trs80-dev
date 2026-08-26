@@ -3,9 +3,22 @@
     "configurations": [
         {
             "type": "dezog",
-            "request": "launch",
-            "name": "TRS-80 (DAP)",
-            "port": 49152
+            "request": "attach",
+            "name": "TRS-80 (attach)",
+            "remoteType": "revz",
+            "revz": {
+                "target": "fpga",
+                "dongle": "fpga",
+                "transport": {
+                    "kind": "python",
+                    "serial": "tcp:5555",
+                    "bridge": "${workspaceFolder}/tools/trszog_bridge.py",
+                    "autoStart": false,
+                    "python": "/usr/bin/python3"
+                }
+            },
+            "rootFolder": "${workspaceFolder}",
+            "startAutomatically": false
         }
     ]
 }
