@@ -261,9 +261,10 @@ class DAPBridge:
 
     def _send(self, msg):
         if self.sock:
-            data = json.dumps(msg).encode() + b"\n"
+            payload = json.dumps(msg).encode("utf-8")
+            header = f"Content-Length: {len(payload)}\r\n\r\n".encode("ascii")
             try:
-                self.sock.sendall(data)
+                self.sock.sendall(header + payload)
             except (OSError, BrokenPipeError):
                 pass
 
@@ -565,31 +566,50 @@ class DAPBridge:
                 return
             time.sleep(0.02)
 
+    def _read_dap_message(self):
+        """Read one DAP message (Content-Length framed)."""
+        # Read headers until \r\n\r\n
+        header_buf = b""
+        while b"\r\n\r\n" not in header_buf:
+            chunk = self.sock.recv(1)
+            if not chunk:
+                return None
+            header_buf += chunk
+        # Parse Content-Length
+        header_str = header_buf.decode("ascii")
+        content_length = None
+        for line in header_str.split("\r\n"):
+            if line.lower().startswith("content-length:"):
+                content_length = int(line.split(":")[1].strip())
+                break
+        if content_length is None:
+            return None
+        # Read body
+        body = b""
+        while len(body) < content_length:
+            chunk = self.sock.recv(content_length - len(body))
+            if not chunk:
+                return None
+            body += chunk
+        return json.loads(body.decode("utf-8"))
+
     def serve(self, port):
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         srv.bind(("127.0.0.1", port))
         srv.listen(1)
-        print(f"dap_bridge: listening on 127.0.0.1:{port}", flush=True)
+        print(f"dap_bridge: listening on 127.0.0.1:{port} (DAP)", flush=True)
         while True:
             self.sock, peer = srv.accept()
             print(f"dap_bridge: VS Code connected from {peer}", flush=True)
-            buf = b""
             try:
                 while True:
-                    chunk = self.sock.recv(4096)
-                    if not chunk:
+                    msg = self._read_dap_message()
+                    if msg is None:
                         break
-                    buf += chunk
-                    while b"\n" in buf:
-                        line, buf = buf.split(b"\n", 1)
-                        if not line.strip():
-                            continue
-                        try:
-                            msg = json.loads(line)
-                        except json.JSONDecodeError:
-                            continue
-                        self._handle_message(msg)
+                    self._handle_message(msg)
+            except (OSError, ConnectionResetError):
+                pass
             finally:
                 print("dap_bridge: disconnected", flush=True)
                 self.sock = None
