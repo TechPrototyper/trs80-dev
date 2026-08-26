@@ -1,73 +1,72 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential git make g++ gcc bison flex libfl-dev cmake \
-        python3 python3-pip ca-certificates libsdl2-dev zlib1g-dev \
-    && rm -rf /var/lib/apt/lists/*
+# ---------------------------------------------------------------------------
+# TRS-80 Dev — everything the codespace needs, baked at image-build time.
+#
+# Design goal: reliability. All the slow, stable pieces live here (cached
+# layers). The per-codespace postCreate step is then trivial and fast.
+#
+# Pinned so every build is identical.
+# ---------------------------------------------------------------------------
+ARG REVZ_REF=f2985497792d85db17e40e966c2e2d838ff6e898
+ARG TRSZOG_VSIX=https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.1/dezog-3.7.4-rc1-trs80.1.vsix
 
+# --- [1] Toolchain (Verilator autotools deps + build essentials) -----------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential git make g++ autoconf flex bison libfl-dev \
+        help2man perl python3 python3-pip ca-certificates unzip \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --break-system-packages pyserial
 
-# Verilator v5.026 (CMake build)
-# NOTE: cmake --install does NOT produce verilator_bin; copy it manually.
-RUN git clone --depth 1 --branch v5.026 https://github.com/verilator/verilator.git /opt/vsrc \
-    && cd /opt/vsrc \
-    && cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local \
-        -DFLEX_EXECUTABLE=/usr/bin/flex \
-        -DFLEX_INCLUDE_DIR=/usr/include \
-    && cmake --build build -j"$(nproc)" \
-    && cp build/src/verilator /usr/local/bin/verilator_bin \
-    && chmod +x /usr/local/bin/verilator_bin \
-    && cmake --install build \
-    && rm -rf /opt/vsrc \
+# --- [2] Verilator v5.040 (autotools install: installs verilated.mk +  -----
+#         the full include tree, so `make` in sim/emu just works). ------------
+#         Must be >= 5.04x: earlier releases don't emit `VPATH += $(VM_USER_DIR)`
+#         in the generated model makefile, so the emulator's own .cpp files
+#         aren't found from build/emu and the build fails.
+RUN git clone --depth 1 --branch v5.040 \
+        https://github.com/verilator/verilator.git /opt/verilator-src \
+    && cd /opt/verilator-src \
+    && autoconf \
+    && ./configure --prefix=/usr/local \
+    && make -j"$(nproc)" \
+    && make install \
+    && rm -rf /opt/verilator-src \
     && ldconfig
 
-# verilated.mk — not installed by CMake, required for --exe builds
-RUN printf '%s\n' \
-    '# verilated.mk — make fragment for Verilator v5.026 (CMake install)' \
-    'VERILATOR_ROOT ?= $(shell dirname $(dirname $(lastword $(MAKEFILE_LIST))))' \
-    'VERILATOR_SRC = $(VERILATOR_ROOT)/include' \
-    '' \
-    'CXX ?= g++' \
-    'LINK = $(CXX)' \
-    'LDLIBS += -lstdc++ -lm -lz' \
-    '' \
-    'VK_USER_OBJS = $(VM_USER_CLASSES:.cpp=.o) main.o' \
-    '' \
-    'VLIB_SRCS = verilated.cpp verilated_dpi.cpp verilated_threads.cpp \' \
-    '    verilated_timing.cpp verilated_random.cpp verilated_vcd_c.cpp \' \
-    '    verilated_vpi.cpp verilated_fst_c.cpp verilated_save.cpp \' \
-    '    verilated_profiler.cpp verilated_cov.cpp' \
-    '' \
-    'VK_GLOBAL_OBJS =' \
-    '' \
-    '$(VM_PREFIX)__ALL.a: $(VLIB_SRCS:.cpp=.o)' \
-    '\tar cr $@ $^' \
-    '' \
-    '%.o: $(VERILATOR_SRC)/%.cpp' \
-    '\t$(CXX) $(CXXFLAGS) $(OPT_FAST) -I$(VERILATOR_SRC) -I$(VERILATOR_SRC)/vltstd -std=c++20 -c -o $@ $<' \
-    > /usr/local/include/verilated.mk
-
-# zmac — Z-80 macro cross-assembler (George Phillips, CC0)
-RUN git clone --depth 1 https://github.com/gp48k/zmac.git /opt/zsrc \
-    && cd /opt/zsrc/src \
-    && make \
+# --- [3] zmac — Z-80 macro cross-assembler (George Phillips, CC0) -----------
+RUN git clone --depth 1 https://github.com/gp48k/zmac.git /opt/zmac-src \
+    && cd /opt/zmac-src/src && make \
     && cp zmac /usr/local/bin/ \
-    && rm -rf /opt/zsrc
+    && rm -rf /opt/zmac-src
 
-# trszog debugger + z80asm extension (baked into image so VS Code sees them immediately)
-RUN python3 -c "import urllib.request; urllib.request.urlretrieve('https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.1/dezog-3.7.4-rc1-trs80.1.vsix', '/tmp/trz.vsix')" \
-    && python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/trz.vsix'); z.extractall('/tmp/trz_ext')" \
-    && mkdir -p /home/vscode/.vscode-remote/extensions/maziac.dezog \
-    && cp -r /tmp/trz_ext/extension/* /home/vscode/.vscode-remote/extensions/maziac.dezog/ \
-    && rm -rf /tmp/trz_ext /tmp/trz.vsix
+# --- [4] Real SDL2 + a headless display. The emulator unconditionally ------
+#         creates an ACCELERATED SDL renderer even in --hidden mode, so a
+#         hand-written SDL stub (or the dummy video driver) is not enough —
+#         it needs a real display with a GL backend. Xvfb + Mesa's llvmpipe
+#         (software GL) provides exactly that with no GPU. Linking against
+#         the complete real SDL2 is also far more robust than a stub.
+#         Placed after Verilator so that heavy layer stays cached.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libsdl2-dev xvfb libgl1-mesa-dri libglx-mesa0 xauth \
+    && rm -rf /var/lib/apt/lists/*
 
-# Z80 syntax highlighting (3KB)
-COPY .devcontainer/z80asm.vsix /tmp/z80asm.vsix
-RUN python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/z80asm.vsix'); z.extractall('/tmp/z80_ext')" \
-    && mkdir -p /home/vscode/.vscode-remote/extensions/local.z80asm \
-    && cp -r /tmp/z80_ext/extension/* /home/vscode/.vscode-remote/extensions/local.z80asm/ \
-    && rm -rf /tmp/z80_ext /tmp/z80asm.vsix
+# --- [5] trs80-rev-z (pinned) + build the headless emulator via its --------
+#         own Makefile. Verilator's --exe --build drives the C++ compile,
+#         so there are no hand-listed generated filenames to drift.
+RUN git clone https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z \
+    && cd /opt/trs80-rev-z && git checkout ${REVZ_REF} \
+    && cd sim/emu \
+    && make -j"$(nproc)" \
+    && test -x build/emu/Vm1_core \
+    && echo "Emulator built OK"
 
-COPY roms/level2.hex /opt/roms/level2.hex
+# --- [6] trszog debugger extension — staged in the image; postCreate -------
+#         installs it into the user's codespace profile. (Not on the VS Code
+#         Marketplace or OpenVSX, so it cannot be auto-installed via the
+#         devcontainer `extensions` list — it must be side-loaded.)
+RUN mkdir -p /opt/trszog-ext \
+    && python3 -c "import urllib.request; urllib.request.urlretrieve('${TRSZOG_VSIX}', '/opt/trszog.vsix')" \
+    && python3 -c "import zipfile; zipfile.ZipFile('/opt/trszog.vsix').extractall('/opt/trszog-ext')" \
+    && test -f /opt/trszog-ext/extension/package.json
 
 WORKDIR /workspace

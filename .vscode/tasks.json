@@ -30,7 +30,7 @@
         {
             "label": "TRS-80: Screen Dump",
             "type": "shell",
-            "command": "python3 /opt/trs80-rev-z/tools/emu_screen_dump.py tcp:5555",
+            "command": "python3 tools/emu_screen_dump.py tcp:5555",
             "problemMatcher": [],
             "presentation": {
                 "reveal": "always",
@@ -38,9 +38,9 @@
             }
         },
         {
-            "label": "TRS-80: Assemble (zmac)",
+            "label": "zmac: Assemble Current File",
             "type": "shell",
-            "command": "cp ${file} /tmp/_zsrc.z && zmac -o ${fileDirname}/${fileBasenameNoExtension}.hex /tmp/_zsrc.z && rm /tmp/_zsrc.z",
+            "command": "zmac --oo cmd,bds,lst ${file}",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

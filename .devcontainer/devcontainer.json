@@ -1,13 +1,8 @@
 {
   "name": "TRS-80 Dev — Z80 Assembly with Cycle-True Model 1",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
-  "features": {
-    "ghcr.io/devcontainers/features/sshd:1": {}
-  },
-  "customizations": {
-    "vscode": {
-      "extensions": []
-    }
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
   },
   "postCreateCommand": "bash .devcontainer/scripts/post_create.sh",
   "forwardPorts": [5555],
