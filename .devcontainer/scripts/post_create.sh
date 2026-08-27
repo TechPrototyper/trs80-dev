@@ -32,6 +32,22 @@ else
     echo "      See roms/README.md for provenance."
 fi
 
+# --- [3] Stale-image guard --------------------------------------------------
+# "Rebuild Container" may silently reuse a cached :latest image. If the staged
+# VSIX does not match the pin in the CURRENT Dockerfile, this container is
+# stale — postAttach would then (re)install an outdated/broken trszog and the
+# emulator misses the latest perf work. Make that loud.
+WANT=$(grep -oE 'TRSZOG_SHA256=[a-f0-9]+' "$WS/.devcontainer/Dockerfile" | head -1 | cut -d= -f2)
+HAVE=$(sha256sum /opt/trszog.vsix 2>/dev/null | cut -d" " -f1)
+if [ -n "$WANT" ] && [ "$WANT" != "$HAVE" ]; then
+    echo ""
+    echo "!!! =================================================================="
+    echo "!!! STALE IMAGE: /opt/trszog.vsix does not match the Dockerfile pin."
+    echo "!!! This container was built from a cached image, not the current one."
+    echo "!!! Fix: Cmd/Ctrl-Shift-P -> 'Codespaces: Full Rebuild Container'"
+    echo "!!! =================================================================="
+fi
+
 echo ""
 echo "=========================================="
 echo " READY"
