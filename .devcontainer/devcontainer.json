@@ -5,6 +5,10 @@
   // time drops from ~20 min to the pull. To iterate on the Dockerfile, push
   // to main and let the workflow publish a fresh :latest first.
   "image": "ghcr.io/techprototyper/trs80-dev:latest",
+  // sshd so `gh codespace ssh` works (remote diagnosis without the browser UI).
+  "features": {
+    "ghcr.io/devcontainers/features/sshd:1": {}
+  },
   "postCreateCommand": "bash .devcontainer/scripts/post_create.sh",
   // trszog is not on the Marketplace/OpenVSX, so it is side-loaded. At attach
   // time the `code` CLI of the VS Code server exists (it does NOT during
