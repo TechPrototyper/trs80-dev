@@ -54,10 +54,11 @@ RUN git clone https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z
 #   trs80gp, trs80sim, and revz (FPGA / Verilator). The `revz` remote lives on
 #   trszog's pr-trs80-support branch; the v3.7.4-rc1-trs80.1 release VSIX is
 #   built from main and lacks revz ("Remote type 'revz' does not exist").
-#   v3.7.4-rc1-trs80.2 is the verified build from pr-trs80-support (2192fe8f),
-#   pinned here by SHA-256.
-ARG TRSZOG_VSIX=https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.2/trszog.vsix
-ARG TRSZOG_SHA256=9f7904dd6c338934e521888b301bbc78502e0653eb32d47758aad37fbe007f7f
+#   v3.7.4-rc1-trs80.3 is the verified build from pr-trs80-support (2192fe8f)
+#   WITH the runtime node_modules the .2 VSIX was missing (the extension
+#   failed to activate: "Cannot find module 'node-graphviz'"). Pinned by SHA-256.
+ARG TRSZOG_VSIX=https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.3/trszog.vsix
+ARG TRSZOG_SHA256=8b5df3efd62ed6f1a126501fc3f021a86743e23b85bb93046215ba2c2b2ee153
 RUN python3 -c "import urllib.request; urllib.request.urlretrieve('${TRSZOG_VSIX}', '/opt/trszog.vsix')" \
     && echo "${TRSZOG_SHA256}  /opt/trszog.vsix" | sha256sum -c - \
     && python3 -c "import zipfile, sys; \

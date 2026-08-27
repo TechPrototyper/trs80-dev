@@ -89,7 +89,7 @@ workflow to publish a fresh `:latest`, then rebuild/recreate the Codespace.
 - Verilator `5.051`, **prebuilt** via oss-cad-suite `2026-08-26` (no source
   build; must be ≥ 5.04x — earlier releases mis-generate the emulator's
   build makefile).
-- trszog: release **`v3.7.4-rc1-trs80.2`** of TechPrototyper/trszog (built
+- trszog: release **`v3.7.4-rc1-trs80.3`** of TechPrototyper/trszog (built
   from `pr-trs80-support` @ `2192fe8f`, includes the `revz` remote; internal
   extension version reads `3.7.4-rc1-trs80.1`). Downloaded at image build,
   pinned by SHA-256.
