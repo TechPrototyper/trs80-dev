@@ -71,11 +71,12 @@ RUN MARCH=$([ "$TARGETARCH" = "arm64" ] && echo armv8-a || echo x86-64-v3) \
 #   Marketplace or OpenVSX, so it must be side-loaded.)
 #
 #   trszog.vsix is the whole trszog (DeZog fork) with every TRS-80 remote —
-#   trs80gp, trs80sim, and revz (FPGA / Verilator). v3.7.4-rc1-trs80.3 is the
-#   verified build from pr-trs80-support (2192fe8f) INCLUDING the runtime
-#   node_modules earlier VSIXes were missing. Pinned by SHA-256.
-ARG TRSZOG_VSIX=https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.3/trszog.vsix
-ARG TRSZOG_SHA256=8b5df3efd62ed6f1a126501fc3f021a86743e23b85bb93046215ba2c2b2ee153
+#   trs80gp, trs80sim, and revz (FPGA / Verilator). v3.7.4-rc1-trs80.4
+#   (pr-trs80-support @ 6e3cd0d) adds real-time pacing for trs80sim
+#   (launch option trs80sim.speed) and includes the runtime node_modules.
+#   Pinned by SHA-256.
+ARG TRSZOG_VSIX=https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.4/trszog.vsix
+ARG TRSZOG_SHA256=64e7bfbcb620f3a13e579c99cf628d6aa40e24c89add5e1e1e03a79d4231ad78
 RUN python3 -c "import urllib.request; urllib.request.urlretrieve('${TRSZOG_VSIX}', '/opt/trszog.vsix')" \
     && echo "${TRSZOG_SHA256}  /opt/trszog.vsix" | sha256sum -c - \
     && python3 -c "import zipfile, sys; \

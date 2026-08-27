@@ -126,9 +126,9 @@ rebuild/recreate the container.
   `.devcontainer/Dockerfile`. Built with PGO at image build time.
 - Verilator `5.051`, **prebuilt** via oss-cad-suite `2026-08-26`
   (linux-x64 and linux-arm64).
-- trszog: release **`v3.7.4-rc1-trs80.3`** of TechPrototyper/trszog (built
-  from `pr-trs80-support` @ `2192fe8f`, includes the `revz` remote and the
-  runtime node_modules; internal extension version reads `3.7.4-rc1-trs80.1`).
+- trszog: release **`v3.7.4-rc1-trs80.4`** of TechPrototyper/trszog
+  (`pr-trs80-support` @ `6e3cd0d`; `revz` remote, runtime node_modules,
+  real-time pacing for trs80sim — `trs80sim.speed`, default 1.0).
   Downloaded at image build, pinned by SHA-256.
 
 [trs80-rev-z]: https://github.com/TechPrototyper/trs80-rev-z
