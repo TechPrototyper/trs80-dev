@@ -36,8 +36,9 @@ whenever `.devcontainer/` changes on `main`.
 
 1. **Open in a Codespace.** The prebuilt image is pulled, `post_create` wires
    up the workspace, and on attach the trszog debugger installs itself
-   (`postAttachCommand`). The rev-z machine **auto-starts** on folder open
-   (task *TRS-80: Start Machine*).
+   (`postAttachCommand`). The rev-z machine does **not** auto-start —
+   it costs a full core; start it on demand (task *TRS-80: Start Machine*)
+   when you want the cycle-true target.
 2. **Assemble** the demo: open `space_invaders.asm` → `Ctrl/Cmd-Shift-B`
    (*zmac: Assemble Current File*) → `zout/space_invaders.cmd` + `.bds`.
 3. **Debug:** press **F5** →
@@ -64,7 +65,7 @@ the emulator natively from [trs80-rev-z] with `make MARCH=native` + PGO
 
 | Task | What it does |
 |------|--------------|
-| **TRS-80: Start Machine** | rev-z emulator headless on `--debug-tcp=5555` (auto-runs on open; re-run after Stop) |
+| **TRS-80: Start Machine** | rev-z emulator headless on `--debug-tcp=5555` (on demand — uses a full core) |
 | **TRS-80: Stop Machine** | Kill the rev-z emulator process |
 | **TRS-80: Screen Dump** | Text-mode VRAM snapshot of the rev-z machine |
 | **zmac: Assemble Current File** | Build the `.asm` you have open → `zout/` |

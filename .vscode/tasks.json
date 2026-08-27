@@ -12,9 +12,6 @@
                 "panel": "dedicated",
                 "group": "trs80"
             },
-            "runOptions": {
-                "runOn": "folderOpen"
-            },
             "background": {
                 "activeInfo": "TRS-80 running on debug-tcp=5555",
                 "beginsPattern": "Starting TRS-80",
