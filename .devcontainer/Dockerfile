@@ -76,7 +76,7 @@ RUN MARCH=$([ "$TARGETARCH" = "arm64" ] && echo armv8-a || echo x86-64-v3) \
 #   (launch option trs80sim.speed) and includes the runtime node_modules.
 #   Pinned by SHA-256.
 ARG TRSZOG_VSIX=https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.4/trszog.vsix
-ARG TRSZOG_SHA256=64e7bfbcb620f3a13e579c99cf628d6aa40e24c89add5e1e1e03a79d4231ad78
+ARG TRSZOG_SHA256=6a473c53207424f63412f5f1caa065da716cc2e4209300670cff9cb3f149ed26
 RUN python3 -c "import urllib.request; urllib.request.urlretrieve('${TRSZOG_VSIX}', '/opt/trszog.vsix')" \
     && echo "${TRSZOG_SHA256}  /opt/trszog.vsix" | sha256sum -c - \
     && python3 -c "import zipfile, sys; \
