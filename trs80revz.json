@@ -1,0 +1,41 @@
+{
+    // TRS-80 Rev Z — machine configuration.
+    // Read by .devcontainer/scripts/start_trs80.sh (task "TRS-80: Start
+    // Machine") and by the trs80 extension. JSON with comments (JSONC).
+
+    "machine": {
+        // "16k" = bare keyboard unit (no Expansion Interface)
+        // "32k" = EI with 16K expansion RAM
+        // "48k" = EI fully populated (default)
+        "memory": "48k",
+        // Percom-style doubler board fitted (double density disks)
+        "percomDoubler": true
+    },
+
+    "media": {
+        // DMK images for drives 0-3 (null = no disk). Paths relative to the
+        // workspace root.
+        "disks": ["disks/boot.dmk", null, null, null],
+        "writeProtect": [false, false, false, false],
+        // Cassette: path to a .cas or .wav, or null
+        "cassette": null,
+        "cassetteBaud": 500
+    },
+
+    "sound": {
+        "enabled": false,
+        "volume": 60
+    },
+
+    // The debug dongle: the machine's debug link (trszog attaches here).
+    // enabled=false starts the machine WITHOUT a debug link — rev-z debug
+    // targets will then refuse to start, on purpose.
+    "debugDongle": {
+        "enabled": true,
+        "port": 5555
+    },
+
+    // 1.0 = real-time cap; the machine simply runs slower where the host
+    // cannot keep up. Set e.g. 0.5 to deliberately slow down.
+    "throttle": 1.0
+}

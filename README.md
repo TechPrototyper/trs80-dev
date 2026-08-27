@@ -72,10 +72,22 @@ the emulator natively from [trs80-rev-z] with `make MARCH=native` + PGO
 | **TRS-80: Screen Dump** | Text-mode VRAM snapshot of the rev-z machine |
 | **zmac: Assemble Current File** | Build the `.asm` you have open → `zout/` |
 
+## Machine configuration (rev-z): `trs80revz.json`
+
+The rev-z machine's feature switches live in **`trs80revz.json`** (JSON with
+comments) in the repo root: memory configuration (`16k` bare keyboard unit /
+`32k` / `48k`), Percom doubler, disks + write protect, cassette, sound,
+throttle — and the **debug dongle**. Disable the dongle
+(`"debugDongle": { "enabled": false }`) and the machine starts without a
+debug link; the rev-z debug targets then refuse to attach, with an
+explanatory error. Invalid configs stop the machine start with a clear
+message. Without the file, defaults apply (48K, any `disks/*.dmk` mounted,
+dongle on :5555).
+
 ## Disk images
 
-Drop `.dmk` files into `disks/` — they mount as drives 0–3 on the next
-*Start Machine* (rev-z target).
+Disks are configured in `trs80revz.json` (`media.disks`); without the file,
+any `.dmk` in `disks/` mounts as drives 0–3 on the next *Start Machine*.
 
 ## Self-check (no VS Code needed)
 
