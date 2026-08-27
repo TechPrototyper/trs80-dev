@@ -1,10 +1,16 @@
 {
   "name": "TRS-80 Dev — Z80 Assembly with Cycle-True Model 1",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "."
-  },
+  // Prebuilt image (built by .github/workflows/devcontainer-image.yml from
+  // .devcontainer/Dockerfile). Codespaces pull it instead of building — open
+  // time drops from ~20 min to the pull. To iterate on the Dockerfile, push
+  // to main and let the workflow publish a fresh :latest first.
+  "image": "ghcr.io/techprototyper/trs80-dev:latest",
   "postCreateCommand": "bash .devcontainer/scripts/post_create.sh",
+  // trszog is not on the Marketplace/OpenVSX, so it is side-loaded. At attach
+  // time the `code` CLI of the VS Code server exists (it does NOT during
+  // postCreate over SSH), so this is the supported install path. --force makes
+  // it idempotent across re-attaches and overwrites stale copies.
+  "postAttachCommand": "code --install-extension /opt/trszog.vsix --force || echo 'trszog install failed — run manually: code --install-extension /opt/trszog.vsix, then Reload Window'",
   "forwardPorts": [5555],
   "portsAttributes": {
     "5555": {

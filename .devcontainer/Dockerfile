@@ -46,20 +46,23 @@ RUN git clone https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z
     && test -x build/emu/Vm1_core \
     && echo "Emulator built OK (Verilator 5.051, prebuilt)"
 
-# --- [5] trszog debugger extension — staged in the image; postCreate -------
-#   installs it into the user's codespace profile. (Not on the VS Code
+# --- [5] trszog debugger extension — staged in the image; postAttach -------
+#   installs it via `code --install-extension`. (Not on the VS Code
 #   Marketplace or OpenVSX, so it must be side-loaded.)
 #
 #   trszog.vsix is the whole trszog (DeZog fork) with every TRS-80 remote —
 #   trs80gp, trs80sim, and revz (FPGA / Verilator). The `revz` remote lives on
-#   trszog's pr-trs80-support branch; the GitHub *release* VSIX is built from
-#   main and lacks revz ("Remote type 'revz' does not exist"), so we ship the
-#   verified build in-repo. Source: TechPrototyper/trszog @ pr-trs80-support (2192fe8f).
-COPY trszog.vsix /opt/trszog.vsix
-RUN mkdir -p /opt/trszog-ext \
-    && python3 -c "import zipfile; zipfile.ZipFile('/opt/trszog.vsix').extractall('/opt/trszog-ext')" \
-    && test -f /opt/trszog-ext/extension/package.json \
-    && grep -q 'case"revz"' /opt/trszog-ext/extension/out/extension.js \
+#   trszog's pr-trs80-support branch; the v3.7.4-rc1-trs80.1 release VSIX is
+#   built from main and lacks revz ("Remote type 'revz' does not exist").
+#   v3.7.4-rc1-trs80.2 is the verified build from pr-trs80-support (2192fe8f),
+#   pinned here by SHA-256.
+ARG TRSZOG_VSIX=https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.2/trszog.vsix
+ARG TRSZOG_SHA256=9f7904dd6c338934e521888b301bbc78502e0653eb32d47758aad37fbe007f7f
+RUN python3 -c "import urllib.request; urllib.request.urlretrieve('${TRSZOG_VSIX}', '/opt/trszog.vsix')" \
+    && echo "${TRSZOG_SHA256}  /opt/trszog.vsix" | sha256sum -c - \
+    && python3 -c "import zipfile, sys; \
+d = zipfile.ZipFile('/opt/trszog.vsix').read('extension/out/extension.js'); \
+sys.exit(0 if b'case\"revz\"' in d else 1)" \
     && echo "trszog revz build verified"
 
 WORKDIR /workspace

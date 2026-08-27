@@ -16,14 +16,17 @@ VS Code (browser)
                                                                          under Xvfb)
 ```
 
-Everything heavy (Verilator, zmac, the built emulator, the trszog extension)
-is baked into the dev-container image, so opening the Codespace is fast.
+Everything heavy (Verilator, zmac, the built emulator, the trszog VSIX) is
+baked into a **prebuilt image** (`ghcr.io/techprototyper/trs80-dev`), published
+by the *devcontainer image* GitHub Actions workflow whenever `.devcontainer/`
+changes on `main`. Opening a Codespace just pulls it — no Dockerfile build.
 
 ## Quick start
 
-1. **Open in a Codespace.** The image builds once (Verilator from source),
-   then `post_create` wires up the workspace. The machine **auto-starts** on
-   folder open (task *TRS-80: Start Machine*).
+1. **Open in a Codespace.** The prebuilt image is pulled, `post_create` wires
+   up the workspace, and on attach the trszog debugger installs itself
+   (`postAttachCommand`). The machine **auto-starts** on folder open
+   (task *TRS-80: Start Machine*).
 2. **Assemble** the demo: open `space_invaders.asm` → run the build task
    *zmac: Assemble Current File* (`Ctrl/Cmd-Shift-B`). It writes
    `zout/space_invaders.cmd` (loadable) and `zout/space_invaders.bds` (symbols).
@@ -59,20 +62,34 @@ and prints `PASS` if the whole chain is healthy.
 
 ## Troubleshooting
 
-- **F5 shows no TRS-80 debugger.** The trszog extension is side-loaded (it is
-  not on the VS Code Marketplace / OpenVSX). If the profile install did not
-  take, run once in the terminal and reload the window:
+- **F5 shows no TRS-80 debugger.** The trszog extension is side-loaded on
+  attach (it is not on the VS Code Marketplace / OpenVSX). If the window
+  opened before the install finished, or the install failed, run once in the
+  terminal and reload the window:
   ```bash
-  code --install-extension /opt/trszog.vsix
+  code --install-extension /opt/trszog.vsix --force
   ```
 - **"No ROM found".** Place your Level II ROM (12 KiB, `$readmemh` hex format)
   at `roms/level2.hex` — see `roms/README.md` for provenance.
 - **Machine not running.** Re-run task *TRS-80: Start Machine*.
+- **Codespace won't create / image pull fails.** The image comes from the
+  *devcontainer image* workflow. Check its latest run on `main`; re-run it
+  (`workflow_dispatch`) if needed.
+
+## Changing the dev environment
+
+The Dockerfile still lives in `.devcontainer/` — it is just no longer built by
+Codespaces. Edit it, push to `main`, wait for the *devcontainer image*
+workflow to publish a fresh `:latest`, then rebuild/recreate the Codespace.
 
 ## What's pinned
 
-- trs80-rev-z RTL + emulator: commit `f298549` (see the `REVZ_REF` arg in
-  `.devcontainer/Dockerfile`).
-- Verilator `v5.040` (must be ≥ 5.04x — earlier releases mis-generate the
-  emulator's build makefile).
-- trszog `v3.7.4-rc1-trs80.1`.
+- trs80-rev-z RTL + emulator: commit `9b19604` (branch `exp/codespace`; the
+  `REVZ_REF` arg in `.devcontainer/Dockerfile`).
+- Verilator `5.051`, **prebuilt** via oss-cad-suite `2026-08-26` (no source
+  build; must be ≥ 5.04x — earlier releases mis-generate the emulator's
+  build makefile).
+- trszog: release **`v3.7.4-rc1-trs80.2`** of TechPrototyper/trszog (built
+  from `pr-trs80-support` @ `2192fe8f`, includes the `revz` remote; internal
+  extension version reads `3.7.4-rc1-trs80.1`). Downloaded at image build,
+  pinned by SHA-256.
