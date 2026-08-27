@@ -31,7 +31,9 @@ RUN cp /opt/trs80-rev-z/tools/trszog_bridge.py /home/workspace/trs80-dev/tools/t
 # --- trszog preinstalled into the server's extension profile ----------------
 USER vscode
 RUN /opt/openvscode-server/bin/openvscode-server --install-extension /opt/trszog.vsix \
-    && /opt/openvscode-server/bin/openvscode-server --list-extensions | grep -qi dezog
+    && /opt/openvscode-server/bin/openvscode-server --install-extension /opt/trs80ext.vsix \
+    && /opt/openvscode-server/bin/openvscode-server --list-extensions | grep -qi dezog \
+    && /opt/openvscode-server/bin/openvscode-server --list-extensions | grep -qi "techprototyper.trs80$"
 
 USER root
 COPY ide/entrypoint.sh /usr/local/bin/trs80-ide

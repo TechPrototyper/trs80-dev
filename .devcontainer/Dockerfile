@@ -83,4 +83,10 @@ d = zipfile.ZipFile('/opt/trszog.vsix').read('extension/out/extension.js'); \
 sys.exit(0 if b'case\"revz\"' in d else 1)" \
     && echo "trszog revz build verified"
 
+# --- [6] trs80 companion extension (assemble/build, DeZog target switcher) --
+ARG TRS80EXT_VSIX=https://github.com/TechPrototyper/trs80-vscode/releases/download/v0.1.0/trs80-0.1.0.vsix
+ARG TRS80EXT_SHA256=c6f5dc293c391ff469079818ede205396d34b25ec6175816571690adf13d18fa
+RUN python3 -c "import urllib.request; urllib.request.urlretrieve('${TRS80EXT_VSIX}', '/opt/trs80ext.vsix')" \
+    && echo "${TRS80EXT_SHA256}  /opt/trs80ext.vsix" | sha256sum -c -
+
 WORKDIR /workspace

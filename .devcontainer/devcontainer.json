@@ -14,7 +14,7 @@
   // time the `code` CLI of the VS Code server exists (it does NOT during
   // postCreate over SSH), so this is the supported install path. --force makes
   // it idempotent across re-attaches and overwrites stale copies.
-  "postAttachCommand": "code --install-extension /opt/trszog.vsix --force || echo 'trszog install failed — run manually: code --install-extension /opt/trszog.vsix, then Reload Window'",
+  "postAttachCommand": "code --install-extension /opt/trszog.vsix --force && code --install-extension /opt/trs80ext.vsix --force || echo 'extension install failed — run manually: code --install-extension /opt/trszog.vsix; code --install-extension /opt/trs80ext.vsix; then Reload Window'",
   "forwardPorts": [5555],
   "portsAttributes": {
     "5555": {
