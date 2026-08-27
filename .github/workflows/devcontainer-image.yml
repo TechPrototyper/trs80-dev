@@ -1,9 +1,15 @@
-# Builds the devcontainer image and publishes it to ghcr.io, so Codespaces
-# pull a ready image instead of building the Dockerfile on every create.
+# Builds two images for linux/amd64 AND linux/arm64 (Apple Silicon: Docker
+# Desktop, Podman, or Apple's native `container` on macOS 26+) and publishes
+# multi-arch manifests to ghcr.io:
 #
-# devcontainer.json references ghcr.io/techprototyper/trs80-dev:latest.
-# Iteration loop: edit .devcontainer/Dockerfile → push to main → this workflow
-# publishes a fresh :latest → new Codespaces (or a rebuild) pick it up.
+#   trs80-dev — the dev-container image (Codespaces + local dev containers)
+#   trs80-ide — trs80-dev + openvscode-server: `docker compose up` → browser IDE
+#
+# Each architecture builds NATIVELY (ubuntu-latest / ubuntu-24.04-arm) — no
+# QEMU — because the build runs a PGO training workload of the emulator.
+#
+# Iteration loop: edit the Dockerfiles → push to main → this workflow
+# publishes fresh :latest manifests → new containers pick them up.
 name: devcontainer image
 
 on:
@@ -11,18 +17,34 @@ on:
     branches: [main]
     paths:
       - ".devcontainer/**"
+      - "ide/**"
+      - "roms/level2.hex"
       - ".github/workflows/devcontainer-image.yml"
   workflow_dispatch:
+
+env:
+  IMAGE_DEV: ghcr.io/techprototyper/trs80-dev
+  IMAGE_IDE: ghcr.io/techprototyper/trs80-ide
 
 permissions:
   contents: read
   packages: write
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
         with:
@@ -30,11 +52,64 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v6
+      - id: build-dev
+        uses: docker/build-push-action@v6
         with:
-          context: .devcontainer
+          context: .
           file: .devcontainer/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/techprototyper/trs80-dev:latest
-            ghcr.io/techprototyper/trs80-dev:${{ github.sha }}
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=${{ env.IMAGE_DEV }},push-by-digest=true,name-canonical=true,push=true
+
+      # The IDE image builds FROM the arch-specific digest just produced, so
+      # both layers are guaranteed to match architectures.
+      - id: build-ide
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ide/Dockerfile
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            BASE=${{ env.IMAGE_DEV }}@${{ steps.build-dev.outputs.digest }}
+          outputs: type=image,name=${{ env.IMAGE_IDE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digests
+        run: |
+          mkdir -p /tmp/digests/dev /tmp/digests/ide
+          d="${{ steps.build-dev.outputs.digest }}"; touch "/tmp/digests/dev/${d#sha256:}"
+          d="${{ steps.build-ide.outputs.digest }}"; touch "/tmp/digests/ide/${d#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ strategy.job-index }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge-manifests:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create multi-arch manifests (latest + sha)
+        run: |
+          cd /tmp/digests/dev
+          docker buildx imagetools create \
+            -t $IMAGE_DEV:latest -t $IMAGE_DEV:${{ github.sha }} \
+            $(printf "$IMAGE_DEV@sha256:%s " *)
+          docker buildx imagetools inspect $IMAGE_DEV:latest
+          cd /tmp/digests/ide
+          docker buildx imagetools create \
+            -t $IMAGE_IDE:latest -t $IMAGE_IDE:${{ github.sha }} \
+            $(printf "$IMAGE_IDE@sha256:%s " *)
+          docker buildx imagetools inspect $IMAGE_IDE:latest

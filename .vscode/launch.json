@@ -4,7 +4,21 @@
         {
             "type": "dezog",
             "request": "launch",
-            "name": "TRS-80 (attach)",
+            "name": "TRS-80 sim (fast, with symbols)",
+            "remoteType": "trs80sim",
+            "rootFolder": "${workspaceFolder}",
+            "trs80sim": { "model": 1, "screen": true },
+            "zmac": [
+                { "path": "zout/space_invaders.bds" }
+            ],
+            "load": "zout/space_invaders.cmd",
+            "topOfStack": "0x8000",
+            "startAutomatically": false
+        },
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "TRS-80 rev-z cycle-true (attach)",
             "remoteType": "revz",
             "rootFolder": "${workspaceFolder}",
             "revz": {
@@ -23,7 +37,7 @@
         {
             "type": "dezog",
             "request": "launch",
-            "name": "TRS-80 (space_invaders, with symbols)",
+            "name": "TRS-80 rev-z cycle-true (space_invaders, with symbols)",
             "remoteType": "revz",
             "rootFolder": "${workspaceFolder}",
             "revz": {

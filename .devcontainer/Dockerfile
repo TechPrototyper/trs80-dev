@@ -1,17 +1,22 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 # ---------------------------------------------------------------------------
-# TRS-80 Dev — everything the codespace needs, baked at image-build time.
+# TRS-80 Dev — everything the codespace / local dev container needs, baked at
+# image-build time. Multi-arch: linux/amd64 and linux/arm64 (Apple Silicon —
+# Docker Desktop, Podman, or Apple's native `container` on macOS 26+).
 #
 # Fast path: a PREBUILT Verilator (oss-cad-suite) instead of compiling it from
-# source (~20 min on a 2-core codespace). Pinned so every build is identical.
+# source. The emulator is built with PGO (train on a ROM boot, rebuild with
+# the profile): +20-27 % wall clock, measured on EPYC and Apple M.
 # ---------------------------------------------------------------------------
-# trs80-rev-z @ 9b19604 (exp/codespace): carries the scoped SYNCASYNCNET
-#   waiver (ADR-0010) so the RTL verilates cleanly under Verilator 5.05x.
-#   (rev-z ships NO ROM/disk by policy — trs80-dev provides those itself.)
-ARG REVZ_REF=9b19604aed669455e91265a506254f26a5ba93b7
-# oss-cad-suite release that ships Verilator 5.051 (prebuilt, linux-x64).
-ARG OSS_CAD=https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-08-26/oss-cad-suite-linux-x64-20260826.tgz
+# trs80-rev-z @ main ea8bca2: gated CPU clock (ADR-0011), graceful SIGINT
+#   shutdown (needed for PGO training), MARCH/PROF build knobs, 5.05x-ready
+#   test suite. (rev-z ships NO ROM/disk by policy — trs80-dev provides them.)
+ARG REVZ_REF=ea8bca2509407d8d483c779265980100ff876701
+ARG OSS_CAD_TAG=2026-08-26
+ARG OSS_CAD_STAMP=20260826
+# amd64 | arm64 — set automatically by buildx.
+ARG TARGETARCH
 
 # --- [1] Toolchain + real SDL2 + a headless display ------------------------
 #   The emulator unconditionally creates an ACCELERATED SDL renderer even in
@@ -23,9 +28,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 RUN pip3 install --break-system-packages pyserial
 
-# --- [2] Prebuilt Verilator 5.051 via oss-cad-suite (no compilation) --------
-RUN cd /opt \
-    && python3 -c "import urllib.request; urllib.request.urlretrieve('${OSS_CAD}', '/tmp/oss.tgz')" \
+# --- [2] Prebuilt Verilator via oss-cad-suite (no compilation) --------------
+RUN OSS_ARCH=$([ "$TARGETARCH" = "arm64" ] && echo linux-arm64 || echo linux-x64) \
+    && cd /opt \
+    && python3 -c "import urllib.request; urllib.request.urlretrieve('https://github.com/YosysHQ/oss-cad-suite-build/releases/download/${OSS_CAD_TAG}/oss-cad-suite-${OSS_ARCH}-${OSS_CAD_STAMP}.tgz', '/tmp/oss.tgz')" \
     && tar xzf /tmp/oss.tgz && rm /tmp/oss.tgz \
     && /opt/oss-cad-suite/bin/verilator --version
 
@@ -35,28 +41,39 @@ RUN git clone --depth 1 https://github.com/gp48k/zmac.git /opt/zmac-src \
     && cp zmac /usr/local/bin/ \
     && rm -rf /opt/zmac-src
 
-# --- [4] trs80-rev-z (pinned to the waiver commit) + build the emulator -----
-#   via its own Makefile. Plain `make` (no -j): the outer make must not pass a
-#   jobserver to Verilator's own `--build -j 0`, or oss-cad-suite's make aborts
-#   with "write jobserver: Bad file descriptor". Verilator parallelizes itself.
-RUN git clone https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z \
+# --- [4] trs80-rev-z + PGO-built emulator -----------------------------------
+#   The ROM comes from THIS repo (trs80-dev may carry it; rev-z never does)
+#   and stays in the image: it is the PGO training workload and the runtime
+#   fallback post_create already looks for.
+#   Plain `make` (no -j): the outer make must not pass a jobserver to
+#   Verilator's own `--build -j 0`, or oss-cad-suite's make aborts.
+COPY roms/level2.hex /tmp/level2.hex
+RUN MARCH=$([ "$TARGETARCH" = "arm64" ] && echo armv8-a || echo x86-64-v3) \
+    && git clone https://github.com/TechPrototyper/trs80-rev-z.git /opt/trs80-rev-z \
     && cd /opt/trs80-rev-z && git checkout ${REVZ_REF} \
+    && mkdir -p roms && cp /tmp/level2.hex roms/level2.hex \
     && cd sim/emu \
-    && bash -c 'source /opt/oss-cad-suite/environment && make' \
+    && bash -c "source /opt/oss-cad-suite/environment && make MARCH=$MARCH PROF='-fprofile-generate=/tmp/pgo'" \
+    && (timeout -s INT 45 xvfb-run -a -s "-screen 0 1024x768x24" \
+          env SDL_AUDIODRIVER=dummy ./build/emu/Vm1_core \
+          --rom=/opt/trs80-rev-z/roms/level2.hex --hidden --no-sound --volume=0 \
+          > /tmp/train.log 2>&1 || true) \
+    && grep -q "^emu:" /tmp/train.log \
+    && test -n "$(ls /tmp/pgo 2>/dev/null)" \
+    && rm -rf build \
+    && bash -c "source /opt/oss-cad-suite/environment && make MARCH=$MARCH PROF='-fprofile-use=/tmp/pgo -fprofile-correction'" \
+    && rm -rf /tmp/pgo /tmp/train.log \
     && test -x build/emu/Vm1_core \
-    && echo "Emulator built OK (Verilator 5.051, prebuilt)"
+    && echo "Emulator built OK (PGO, MARCH=$MARCH)"
 
 # --- [5] trszog debugger extension — staged in the image; postAttach -------
 #   installs it via `code --install-extension`. (Not on the VS Code
 #   Marketplace or OpenVSX, so it must be side-loaded.)
 #
 #   trszog.vsix is the whole trszog (DeZog fork) with every TRS-80 remote —
-#   trs80gp, trs80sim, and revz (FPGA / Verilator). The `revz` remote lives on
-#   trszog's pr-trs80-support branch; the v3.7.4-rc1-trs80.1 release VSIX is
-#   built from main and lacks revz ("Remote type 'revz' does not exist").
-#   v3.7.4-rc1-trs80.3 is the verified build from pr-trs80-support (2192fe8f)
-#   WITH the runtime node_modules the .2 VSIX was missing (the extension
-#   failed to activate: "Cannot find module 'node-graphviz'"). Pinned by SHA-256.
+#   trs80gp, trs80sim, and revz (FPGA / Verilator). v3.7.4-rc1-trs80.3 is the
+#   verified build from pr-trs80-support (2192fe8f) INCLUDING the runtime
+#   node_modules earlier VSIXes were missing. Pinned by SHA-256.
 ARG TRSZOG_VSIX=https://github.com/TechPrototyper/trszog/releases/download/v3.7.4-rc1-trs80.3/trszog.vsix
 ARG TRSZOG_SHA256=8b5df3efd62ed6f1a126501fc3f021a86743e23b85bb93046215ba2c2b2ee153
 RUN python3 -c "import urllib.request; urllib.request.urlretrieve('${TRSZOG_VSIX}', '/opt/trszog.vsix')" \

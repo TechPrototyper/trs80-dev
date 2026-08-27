@@ -55,5 +55,5 @@ exec xvfb-run -a -s "-screen 0 1024x768x24" \
     --volume=0 \
     --no-sound \
     --debug-tcp=5555 \
-    --throttle=0.7 \
+    --throttle=1.0 \
     $DISKS
