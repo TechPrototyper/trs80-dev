@@ -54,8 +54,10 @@ runtime; the image is standard multi-arch OCI, all three just work.
 - **VS Code Desktop:** install the *Dev Containers* extension, open this
   repo, “Reopen in Container”. Everything else happens automatically.
 - **Browser IDE without VS Code installed:** see `ide/` (image
-  `ghcr.io/techprototyper/trs80-ide`) — `docker compose up` (or
-  `container run …` on Tahoe) and open `http://localhost:3000`.
+  `ghcr.io/techprototyper/trs80-ide`) — `docker compose up` (or, on Tahoe,
+  `container run --memory 2g -p 3000:3000 ghcr.io/techprototyper/trs80-ide` —
+  Apple's default VM memory is only 1 GB, too tight) and open
+  `http://localhost:3000`.
 
 For the absolute maximum (~0.95× realtime measured on Apple Silicon), build
 the emulator natively from [trs80-rev-z] with `make MARCH=native` + PGO

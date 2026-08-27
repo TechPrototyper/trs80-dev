@@ -1,6 +1,9 @@
 # TRS-80 IDE in the browser:  docker compose up  →  http://localhost:3000
-# (On macOS 26+ Apple's native runtime works too:
-#    container run -p 3000:3000 ghcr.io/techprototyper/trs80-ide:latest )
+#
+# On macOS 26+ Apple's native runtime works too — but note its default VM
+# memory is only 1 GB (the OOM killer then silently kills processes):
+#    container run --memory 2g -p 3000:3000 ghcr.io/techprototyper/trs80-ide:latest
+# Use --memory 6g if you plan to rebuild the emulator inside the container.
 services:
   trs80-ide:
     image: ghcr.io/techprototyper/trs80-ide:latest
